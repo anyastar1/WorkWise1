@@ -43,7 +43,7 @@
             class="login-form"
             id="loginForm"
             method="POST"
-            action="{{ url_for('login') }}"
+            action="{{ url_for('auth.login') }}"
           >
             <div class="input-group">
               <label>Тип клиента</label>
@@ -106,7 +106,7 @@
             </div>
 
             <p class="forgot-password">
-              <a href="{{ url_for('password_recovery') }}">Забыли пароль?</a>
+              <a href="{{ url_for('auth.password_recovery') }}">Забыли пароль?</a>
             </p>
 
             <button type="submit" class="login-btn">Войти</button>
@@ -114,7 +114,7 @@
 
           <div class="register-link">
             Нет аккаунта?
-            <a href="{{ url_for('registration') }}">Зарегистрироваться</a>
+            <a href="{{ url_for('auth.registration') }}">Зарегистрироваться</a>
           </div>
         </div>
       </main>

@@ -46,7 +46,7 @@
         <form
           id="registrationForm"
           method="POST"
-          action="{{ url_for('registration') }}"
+          action="{{ url_for('auth.registration') }}"
         >
           <div class="form-group">
             <label class="form-label">Логин</label>
@@ -146,7 +146,7 @@
           <div class="bottom-links">
             <a href="#" class="bottom-link">FAQ</a>
             <a href="#" class="bottom-link">Помощь</a>
-            <a href="{{ url_for('login') }}" class="bottom-link">Вход</a>
+            <a href="{{ url_for('auth.login') }}" class="bottom-link">Вход</a>
           </div>
         </form>
       </div>

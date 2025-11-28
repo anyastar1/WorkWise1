@@ -29,10 +29,10 @@
 
         <div class="sidebar-menu">
           <div class="menu-item active">Мои работы</div>
-          <a href="{{ url_for('settings') }}" class="menu-item">Настройки</a>
+          <a href="{{ url_for('main.settings') }}" class="menu-item">Настройки</a>
           <div class="divider"></div>
           
-          <a href="{{ url_for('logout') }}" class="logout-btn" id="logoutBtn">Выйти</a>
+          <a href="{{ url_for('auth.logout') }}" class="logout-btn" id="logoutBtn">Выйти</a>
         </div>
       </aside>
 
@@ -40,7 +40,7 @@
         <div class="dashboard-header">
           <h1>Мои работы</h1>
           <button class="upload-btn" id="uploadBtn">
-            <a href="{{ url_for('check_file') }}">Загрузить файл</a>
+            <a href="{{ url_for('upload.check_file') }}">Загрузить файл</a>
           </button>
         </div>
 
@@ -109,7 +109,7 @@
         document
           .getElementById("uploadBtn")
           .addEventListener("click", function () {
-            window.location.href = "{{ url_for('check_file') }}";
+            window.location.href = "{{ url_for('upload.check_file') }}";
           });
 
         // 2. ИСПРАВЛЕНО: Кнопка "Подробнее" -> ведет на маршрут 'work_details'
@@ -118,7 +118,7 @@
             e.preventDefault();
             const uploadId = this.getAttribute('data-upload-id');
             // Генерируем URL с правильным ID, используя Jinja2
-            const detailsUrl = "{{ url_for('work_details', upload_id=0) }}".replace('0', uploadId);
+            const detailsUrl = "{{ url_for('upload.work_details', upload_id=0) }}".replace('0', uploadId);
             window.location.href = detailsUrl;
           });
         });
@@ -126,7 +126,7 @@
         // 3. ИСПРАВЛЕНО: Выход -> использует маршрут 'logout'
         // Мы используем тег <a>, но если нужен JS:
         // document.getElementById("logoutBtn").addEventListener("click", function () {
-        //     window.location.href = "{{ url_for('logout') }}";
+        //     window.location.href = "{{ url_for('auth.logout') }}";
         // });
       });
     </script>

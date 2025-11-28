@@ -32,10 +32,10 @@
 
         <div class="sidebar-menu">
           <div class="menu-item active">Мои работы</div>
-          <a href="{{ url_for('settings') }}" class="menu-item">Настройки</a>
+          <a href="{{ url_for('main.settings') }}" class="menu-item">Настройки</a>
           <div class="divider"></div>
 
-          <a href="{{ url_for('logout') }}" class="logout-btn" id="logoutBtn"
+          <a href="{{ url_for('auth.logout') }}" class="logout-btn" id="logoutBtn"
             >Выйти</a
           >
         </div>
@@ -59,7 +59,7 @@
               <button
                 class="upload-btn"
                 id="uploadBtn"
-                onclick="window.location.href='{{ url_for('check_file') }}'"
+                onclick="window.location.href='{{ url_for('upload.check_file') }}'"
               >
                 Загрузить файл
               </button>
@@ -87,7 +87,7 @@
             </div>
             <div class="work-actions">
               <a
-                href="{{ url_for('process_file', upload_id=upload.id) }}"
+                href="{{ url_for('upload.process_file', upload_id=upload.id) }}"
                 class="details-btn"
                 >Подробнее</a
               >
