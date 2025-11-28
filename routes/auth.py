@@ -13,6 +13,7 @@ from flask import (
     g,
 )
 from database import User, KeyCompany
+from utils.auth_helpers import validate_user_exists, validate_company_key
 
 bp = Blueprint("auth", __name__)
 
@@ -74,20 +75,20 @@ def registration():
         activity_type = request.form.get("activity_type")
         company_key = request.form.get("company_key")
 
-        if db.query(User).filter_by(login=login_input).count() > 0:
+        # Проверка существования пользователя
+        login_exists, email_exists = validate_user_exists(db, login=login_input, email=email)
+        
+        if login_exists:
             flash("Логин занят.", "error")
             return redirect(url_for("auth.registration"))
-        if db.query(User).filter_by(email=email).count() > 0:
+        if email_exists:
             flash("Email занят.", "error")
             return redirect(url_for("auth.registration"))
 
+        # Проверка ключа компании
         company_id = None
         if client_type == "company":
-            key_obj = (
-                db.query(KeyCompany)
-                .filter_by(key_value=company_key, is_active=True)
-                .one_or_none()
-            )
+            key_obj = validate_company_key(db, company_key)
             if not key_obj:
                 flash("Неверный ключ компании.", "error")
                 return redirect(url_for("auth.registration"))

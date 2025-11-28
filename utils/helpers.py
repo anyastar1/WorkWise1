@@ -37,6 +37,46 @@ except ImportError:
     DOCX2PDF_AVAILABLE = False
 
 
+def safe_remove_file(file_path):
+    """
+    Безопасно удаляет файл, игнорируя ошибки.
+    
+    Args:
+        file_path: Путь к файлу для удаления
+    """
+    try:
+        if file_path and os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"🗑️ Файл удалён: {file_path}")
+    except Exception as e:
+        print(f"⚠️ Не удалось удалить файл {file_path}: {e}")
+
+
+def extract_text_from_pdf(file_path):
+    """
+    Извлекает текст из PDF файла.
+    
+    Args:
+        file_path: Путь к PDF файлу
+        
+    Returns:
+        str: Извлеченный текст или пустая строка
+    """
+    text_content = ""
+    
+    if PYMUPDF_AVAILABLE:
+        try:
+            import fitz
+            doc = fitz.open(file_path)
+            text_content = "\n".join([page.get_text() for page in doc])
+            doc.close()
+            print(f"✅ Текст извлечён из PDF: {len(text_content)} символов")
+        except Exception as e:
+            print(f"⚠️ Ошибка чтения PDF: {e}")
+    
+    return text_content
+
+
 def clean_json_response(text):
     """Очищает JSON ответ от markdown обёрток и лишних символов."""
     if not text:

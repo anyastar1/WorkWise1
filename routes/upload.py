@@ -20,7 +20,20 @@ from flask import (
 )
 from database import User, UserUpload, GOST
 from api.ollama_client import is_api_configured
-from utils.helpers import allowed_file, convert_docx_to_pdf, PYMUPDF_AVAILABLE
+from utils.helpers import (
+    allowed_file,
+    convert_docx_to_pdf,
+    PYMUPDF_AVAILABLE,
+    safe_remove_file,
+    extract_text_from_pdf,
+)
+from utils.auth_helpers import (
+    get_current_user,
+    require_login,
+    get_return_route,
+    get_available_gosts,
+    check_upload_access,
+)
 from services.document_analyzer import analyze_document
 
 bp = Blueprint("upload", __name__)
@@ -32,31 +45,15 @@ except ImportError:
     fitz = None
 
 
-def get_current_user(db_session):
-    """Получает текущего пользователя из сессии."""
-    user_id = session.get("user_id")
-    if user_id:
-        return db_session.query(User).get(user_id)
-    return None
-
-
 @bp.route("/check-file", methods=["GET", "POST"])
+@require_login
 def check_file():
     """Страница загрузки и проверки файла."""
-    if "user_id" not in session:
-        return redirect(url_for("auth.login"))
-
     db = g.db_session
-    user = db.query(User).filter_by(id=session["user_id"]).one_or_none()
-
-    if not user:
-        return redirect(url_for("auth.login"))
+    user = get_current_user(db)
 
     # Получаем доступные ГОСТы
-    if user.client_type == "company":
-        gosts = db.query(GOST).all()
-    else:
-        gosts = db.query(GOST).filter_by(client_type_for="all").all()
+    gosts = get_available_gosts(db, user)
 
     # Для API предупреждения
     api_warning = None
@@ -135,25 +132,15 @@ def check_file():
                 print(f"❌ Ошибка конвертации DOCX в PDF: {e}")
                 flash(f"Ошибка конвертации файла в PDF: {str(e)}", "error")
                 # Удаляем оригинальный файл при ошибке
-                try:
-                    if os.path.exists(original_file_path):
-                        os.remove(original_file_path)
-                except:
-                    pass
+                safe_remove_file(original_file_path)
                 return redirect(request.url)
 
         try:
             # Извлекаем текст из файла (теперь всегда PDF или уже был PDF)
             text_content = ""
 
-            if file_ext == ".pdf" and PYMUPDF_AVAILABLE and fitz:
-                try:
-                    doc = fitz.open(file_path)
-                    text_content = "\n".join([page.get_text() for page in doc])
-                    doc.close()
-                    print(f"✅ Текст извлечён из PDF: {len(text_content)} символов")
-                except Exception as e:
-                    print(f"⚠️ Ошибка чтения PDF: {e}")
+            if file_ext == ".pdf":
+                text_content = extract_text_from_pdf(file_path)
             elif file_ext == ".txt":
                 with open(file_path, "r", encoding="utf-8") as f:
                     text_content = f.read()
@@ -185,12 +172,8 @@ def check_file():
             print(f"✅ Сохранено в БД, ID: {upload_id}")
 
             # Удаляем оригинальный DOCX файл, если был создан PDF
-            if pdf_path and os.path.exists(original_file_path):
-                try:
-                    os.remove(original_file_path)
-                    print(f"🗑️ Оригинальный DOCX файл удалён: {original_file_path}")
-                except Exception as e:
-                    print(f"⚠️ Не удалось удалить оригинальный файл: {e}")
+            if pdf_path:
+                safe_remove_file(original_file_path)
 
             if analysis_result.get("success"):
                 flash("Файл успешно обработан!", "success")
@@ -209,13 +192,8 @@ def check_file():
             traceback.print_exc()
 
             # Удаляем временные файлы при ошибке
-            try:
-                if pdf_path and os.path.exists(pdf_path):
-                    os.remove(pdf_path)
-                if os.path.exists(original_file_path):
-                    os.remove(original_file_path)
-            except:
-                pass
+            safe_remove_file(pdf_path)
+            safe_remove_file(original_file_path)
 
             # Сохраняем с ошибкой
             upload = UserUpload(
@@ -243,11 +221,7 @@ def check_file():
             return redirect(url_for("upload.process_file", upload_id=upload_id))
 
     # GET запрос - показываем форму
-    return_route = (
-        url_for("main.lk_company")
-        if user.client_type == "company"
-        else url_for("main.lk_private")
-    )
+    return_route = get_return_route(user)
 
     return render_template(
         "check.html",
@@ -260,21 +234,18 @@ def check_file():
 
 
 @bp.route("/process-file/<int:upload_id>")
+@require_login
 def process_file(upload_id):
     """Отображение результатов обработки файла."""
     db = g.db_session
     user = get_current_user(db)
-    if not user:
-        return redirect(url_for("auth.login"))
 
     upload = db.query(UserUpload).filter_by(id=upload_id).one_or_none()
     if not upload:
         return redirect(url_for("main.lk_private"))
 
     # Проверка прав доступа
-    if upload.user_id != user.id and not (
-        user.client_type == "company" and upload.user.company_id == user.company_id
-    ):
+    if not check_upload_access(upload, user):
         return redirect(url_for("main.lk_private"))
 
     gost_obj = db.query(GOST).filter_by(id=upload.gost_id).one_or_none()
@@ -285,14 +256,10 @@ def process_file(upload_id):
         try:
             data = json.loads(upload.report_json)
             result = data.get("gost_processing")
-        except:
+        except (json.JSONDecodeError, TypeError):
             pass
 
-    return_route = (
-        url_for("main.lk_company")
-        if user.client_type == "company"
-        else url_for("main.lk_private")
-    )
+    return_route = get_return_route(user)
     return render_template(
         "process-file.html",
         upload=upload,
