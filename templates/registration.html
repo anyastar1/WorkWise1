@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Регистрация</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <div id="registrationPage">
+      <div class="registration-section">
+        <h1 class="registration-title">Регистрация</h1>
+
+        <!-- Блок сообщений об ошибках (Flash) -->
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div style="margin-bottom: 20px">
+          {% for category, message in messages %}
+          <div
+            style="
+              padding: 10px;
+              background: rgba(244, 67, 54, 0.1);
+              border: 1px solid #f44336;
+              color: #f44336;
+              border-radius: 5px;
+              font-size: 14px;
+              margin-bottom: 5px;
+            "
+          >
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
+        <div class="divider"></div>
+
+        <!-- Добавлен method и action -->
+        <form
+          id="registrationForm"
+          method="POST"
+          action="{{ url_for('registration') }}"
+        >
+          <div class="form-group">
+            <label class="form-label">Логин</label>
+            <input
+              type="text"
+              name="login"
+              class="form-input"
+              placeholder="Введите имя пользователя"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Почта</label>
+            <input
+              type="email"
+              name="email"
+              class="form-input"
+              placeholder="Введите email"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Пароль</label>
+            <input
+              type="password"
+              name="password"
+              id="passwordInput"
+              class="form-input"
+              placeholder="Введите пароль"
+              required
+              minlength="6"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Повторите пароль</label>
+            <input
+              type="password"
+              id="confirmPasswordInput"
+              class="form-input"
+              placeholder="Повторите пароль"
+              required
+            />
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="form-group">
+            <label class="form-label">Тип деятельности</label>
+            <div class="select-wrapper">
+              <!-- Добавлен name="activity_type" -->
+              <select class="form-select" name="activity_type" required>
+                <option value="" disabled selected>
+                  Выберите тип деятельности
+                </option>
+                <option value="student">Студент</option>
+                <option value="energy">Научный исследователь</option>
+                <option value="oil">Инженер</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Тип клиента</label>
+            <div class="select-wrapper">
+              <!-- Добавлен name="client_type" -->
+              <select
+                class="form-select"
+                id="clientType"
+                name="client_type"
+                required
+              >
+                <option value="" disabled selected>Выберите тип клиента</option>
+                <option value="private">Частный</option>
+                <option value="company">Компания</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group" id="companyKeyGroup" style="display: none">
+            <label class="form-label">Ключ компании</label>
+            <input
+              type="text"
+              name="company_key"
+              class="form-input"
+              id="companyKey"
+              placeholder="Введите ключ компании"
+            />
+          </div>
+
+          <button type="submit" class="create-account-btn">
+            Создать аккаунт
+          </button>
+
+          <div class="bottom-links">
+            <a href="#" class="bottom-link">FAQ</a>
+            <a href="#" class="bottom-link">Помощь</a>
+            <a href="{{ url_for('login') }}" class="bottom-link">Вход</a>
+          </div>
+        </form>
+      </div>
+
+      <div class="logo-section">
+        <div class="text-background" id="textBackground"></div>
+        <div class="main-logo">WorkWise</div>
+        <div class="tagline">Сервис проверки отчетов</div>
+      </div>
+    </div>
+
+    <script>
+      // Анимация фона (ваш код)
+      const textBackground = document.getElementById("textBackground");
+      const words = [
+        "TEXT",
+        "WORK",
+        "STUDY",
+        "LEARN",
+        "EDUCATION",
+        "QUALITY",
+        "UNIVERSITY",
+        "KNOWLEDGE",
+        "RESEARCH",
+        "SCIENCE",
+        "ACADEMIC",
+        "PROFESSOR",
+        "STUDENT",
+        "CAMPUS",
+        "DIPLOMA",
+        "LECTURE",
+        "SEMINAR",
+        "EXAM",
+        "THESIS",
+        "GRADUATE",
+      ];
+
+      for (let i = 0; i < 150; i++) {
+        const word = document.createElement("div");
+        word.className = "text-word";
+        word.textContent = words[Math.floor(Math.random() * words.length)];
+        textBackground.appendChild(word);
+      }
+
+      // Логика переключения полей компании
+      document
+        .getElementById("clientType")
+        .addEventListener("change", function () {
+          const companyKeyGroup = document.getElementById("companyKeyGroup");
+          const companyKeyInput = document.getElementById("companyKey");
+
+          if (this.value === "company") {
+            companyKeyGroup.style.display = "flex";
+            companyKeyGroup.classList.add("visible");
+            companyKeyInput.required = true;
+          } else {
+            companyKeyGroup.style.display = "none";
+            companyKeyGroup.classList.remove("visible");
+            companyKeyInput.required = false;
+            companyKeyInput.value = "";
+          }
+        });
+
+      // ВАЖНОЕ ИЗМЕНЕНИЕ: Валидация перед отправкой на сервер
+      document
+        .getElementById("registrationForm")
+        .addEventListener("submit", function (e) {
+          const password = document.getElementById("passwordInput").value;
+          const confirmPassword = document.getElementById(
+            "confirmPasswordInput"
+          ).value;
+
+          if (password !== confirmPassword) {
+            e.preventDefault(); // Останавливаем отправку только при ошибке
+            alert("Пароли не совпадают!");
+            return;
+          }
+
+          // Если всё ок, скрипт НЕ делает preventDefault(),
+          // и форма улетает на сервер в app.py
+        });
+
+      document.querySelectorAll(".bottom-link").forEach((link) => {
+        link.addEventListener("click", function (e) {
+          const href = this.getAttribute("href");
+          if (href === "#") {
+            e.preventDefault();
+            alert("Переход на: " + this.textContent);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

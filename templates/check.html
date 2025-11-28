@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Проверить файл</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <div id="uploadFilePage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <button class="menu-toggle" id="menuToggle">☰</button>
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="user-info-nav" id="userInfoNav">{{ user. login }}</div>
+      </nav>
+
+      <aside class="sidebar" id="sidebar">
+        <div class="user-info">
+          <div class="avatar" id="userAvatar">{{ user.login[:2]|upper }}</div>
+          <div class="user-name" id="userName">{{ user.login }}</div>
+        </div>
+
+        <div class="sidebar-menu">
+          <div class="menu-item" id="myWorksBtn">Мои работы</div>
+          <div
+            class="menu-item"
+            onclick="window.location.href='{{ url_for('settings') }}'"
+          >
+            Настройки
+          </div>
+          <div class="divider"></div>
+          <button class="logout-btn" id="logoutBtn">Выйти</button>
+        </div>
+      </aside>
+
+      <main class="main-content" id="mainContent">
+        <div class="upload-section">
+          <!-- Блок вывода ошибок -->
+          {% with messages = get_flashed_messages(with_categories=true) %} {% if
+          messages %}
+          <div class="flash-messages" style="margin-bottom: 20px">
+            {% for category, message in messages %}
+            <div
+              style="padding: 15px; border-radius: 10px; margin-bottom: 10px; 
+                    {% if category == 'error' %}background: rgba(244, 67, 54, 0. 1); border: 1px solid #f44336; color: #f44336;
+                    {% else %}background: rgba(76, 175, 80, 0. 1); border: 1px solid #4caf50; color: #4caf50;{% endif %}"
+            >
+              <strong>{{ message }}</strong>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% endwith %}
+
+          <!-- Предупреждение о настройке API ключа -->
+          {% if api_warning and not is_api_configured %}
+          <div
+            style="
+              padding: 20px;
+              border-radius: 10px;
+              margin-bottom: 20px;
+              background: rgba(255, 152, 0, 0.1);
+              border: 2px solid #ff9800;
+              color: #ff9800;
+            "
+          >
+            <strong>⚠️ ВНИМАНИЕ: API ключ Google Gemini не настроен</strong>
+            <p style="margin: 10px 0 0 0; font-size: 14px">{{ api_warning }}</p>
+          </div>
+          {% endif %}
+
+          <form
+            class="file-upload-form"
+            id="uploadForm"
+            method="POST"
+            action="{{ url_for('check_file') }}"
+            enctype="multipart/form-data"
+          >
+            <h1 class="section-title">Проверить файл</h1>
+            <p class="section-description">
+              Загрузите вашу работу (DOCX, PDF) для автоматической проверки на
+              соответствие выбранным стандартам.
+            </p>
+
+            <div class="input-group">
+              <label class="form-label">Выберите стандарт (ГОСТ)</label>
+              <select
+                class="form-input"
+                name="gost_select"
+                id="gostSelect"
+                required
+              >
+                <option value="">-- Выберите ГОСТ --</option>
+                {% for gost in gosts %}
+                <option value="{{ gost. id }}">{{ gost. name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div
+              class="file-upload-box"
+              id="fileUploadBox"
+              style="
+                background-color: #414a48;
+                border: 2px dashed #339989;
+                border-radius: 15px;
+                padding: 40px;
+                text-align: center;
+                margin: 20px 0;
+              "
+            >
+              <input
+                type="file"
+                name="file_upload"
+                id="fileInput"
+                accept=".docx,.pdf"
+                style="display: none"
+              />
+              <button
+                type="button"
+                class="upload-placeholder-btn"
+                id="selectFileBtn"
+                style="
+                  background-color: #339989;
+                  color: white;
+                  border: none;
+                  padding: 12px 30px;
+                  border-radius: 25px;
+                  cursor: pointer;
+                  font-size: 16px;
+                "
+              >
+                Выберите файл
+              </button>
+              <p style="margin-top: 15px; color: #b6d4cf">
+                DOCX, PDF. Макс. 20 МБ.
+              </p>
+            </div>
+
+            <div
+              class="selected-file"
+              id="selectedFile"
+              style="
+                display: none;
+                background-color: #414a48;
+                border-radius: 10px;
+                padding: 15px;
+                margin: 15px 0;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                "
+              >
+                <span
+                  id="fileName"
+                  style="font-weight: bold; color: #b6d4cf"
+                ></span>
+                <span id="fileSize" style="color: #5fa99b"></span>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="check-button"
+              id="checkButton"
+              style="
+                display: none;
+                background-color: #339989;
+                color: white;
+                border: none;
+                padding: 15px 40px;
+                border-radius: 25px;
+                cursor: pointer;
+                font-size: 18px;
+                font-weight: bold;
+                width: 100%;
+              "
+            >
+              Отправить на проверку
+            </button>
+          </form>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const menuToggle = document.getElementById("menuToggle");
+        const sidebar = document.getElementById("sidebar");
+        const mainContent = document.getElementById("mainContent");
+        const fileInput = document.getElementById("fileInput");
+        const selectFileBtn = document.getElementById("selectFileBtn");
+        const selectedFile = document.getElementById("selectedFile");
+        const fileNameSpan = document.getElementById("fileName");
+        const fileSizeSpan = document.getElementById("fileSize");
+        const checkButton = document.getElementById("checkButton");
+        const uploadForm = document.getElementById("uploadForm");
+
+        // Обработка бокового меню
+        menuToggle.addEventListener("click", function () {
+          sidebar.classList.toggle("active");
+          mainContent.classList.toggle("shifted");
+        });
+
+        // Обработка выбора файла - клик по кнопке
+        selectFileBtn.addEventListener("click", function (e) {
+          e.preventDefault();
+          fileInput.click();
+        });
+
+        // Когда файл выбран
+        fileInput.addEventListener("change", function () {
+          const file = this.files[0];
+          if (file) {
+            fileNameSpan.textContent = file.name;
+            fileSizeSpan.textContent = formatFileSize(file.size);
+            selectedFile.style.display = "block";
+            checkButton.style.display = "block";
+            console.log("Файл выбран:", file.name);
+          } else {
+            selectedFile.style.display = "none";
+            checkButton.style.display = "none";
+          }
+        });
+
+        // Навигация
+        document
+          .getElementById("myWorksBtn")
+          .addEventListener("click", function () {
+            window.location.href = "{{ return_route }}";
+          });
+
+        document
+          .getElementById("logoutBtn")
+          .addEventListener("click", function () {
+            window.location.href = "{{ url_for('logout') }}";
+          });
+
+        // Функция форматирования размера файла
+        function formatFileSize(bytes) {
+          if (bytes === 0) return "0 Bytes";
+          const k = 1024;
+          const sizes = ["Bytes", "KB", "MB", "GB"];
+          const i = Math.floor(Math.log(bytes) / Math.log(k));
+          return (
+            parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i]
+          );
+        }
+      });
+    </script>
+  </body>
+</html>

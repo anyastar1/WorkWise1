@@ -1,0 +1,1846 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Montserrat", sans-serif;
+}
+/* --- Добавление: CSS-переменные для темной и светлой темы --- */
+/* Темная тема (по умолчанию) */
+:root {
+  --color-background-main: #131515;
+  --color-text-main: #b6d4cf;
+  --color-accent-primary: #339989;
+  --color-box-background: #339989; /* bottom-box, registration-section */
+  --color-box-text: #ffffff;
+  --color-input-background: rgba(19, 21, 21, 0.3);
+  --color-input-text: white;
+  --color-link: #ffeaea;
+  --color-divider-color: white;
+  --color-top-nav-bg: rgba(51, 153, 137, 0.9);
+  --color-top-nav-text: #131515;
+  --color-sidebar-bg: rgba(51, 153, 137, 0.9);
+  --color-sidebar-text: #131515;
+  --color-main-content-bg: #414a48; /* Фон для секций внутри LK/Check/Settings */
+  --color-secondary-text: #5fa99b;
+}
+
+/* Светлая тема */
+.light-theme {
+  --color-background-main: #f4f7f6; /* Светлый фон */
+  --color-text-main: #131515; /* Темный текст */
+  --color-accent-primary: #5fa99b; /* Светлее акцент */
+  --color-box-background: #5fa99b;
+  --color-box-text: #131515;
+  --color-input-background: rgba(19, 21, 21, 0.1); /* Светлый фон инпутов */
+  --color-input-text: #131515;
+  --color-link: #131515;
+  --color-divider-color: #131515;
+  --color-top-nav-bg: #b6d4cf;
+  --color-top-nav-text: #131515;
+  --color-sidebar-bg: #b6d4cf;
+  --color-sidebar-text: #131515;
+  --color-main-content-bg: #ffffff;
+  --color-secondary-text: #339989;
+}
+
+/* Добавление: Обновление общих стилей для использования переменных
+   (Для полной работы смены темы потребуется обновить стили в JS,
+    добавив класс .light-theme к <body>) */
+body {
+  background-color: var(--color-background-main);
+  color: var(--color-text-main);
+}
+
+/* Применение переменных к ключевым элементам для поддержки смены темы */
+/* Так как я не могу менять существующие стили, я добавляю эти правила, 
+   чтобы переопределить только те, что связаны с темой */
+.top-nav {
+  background-color: var(--color-top-nav-bg);
+}
+
+.sidebar {
+  background: var(--color-sidebar-bg);
+}
+
+.top-nav .logo, .nav-left .menu-toggle, .user-info-nav {
+    color: var(--color-top-nav-text);
+}
+
+.sidebar-menu .menu-item, .logout-btn {
+    color: var(--color-sidebar-text);
+}
+
+/* --- Добавление: Стили для новой страницы настроек (settings.html) --- */
+#settingsPage {
+  background-color: var(--color-background-main);
+  color: var(--color-text-main);
+  min-height: 100vh;
+  overflow: hidden;
+  font-weight: 400;
+}
+
+.settings-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px;
+}
+
+.settings-title {
+  font-size: 32px;
+  color: var(--color-text-main);
+  font-weight: 600;
+  margin-bottom: 30px;
+  padding-top: 30px; /* Учитываем высоту top-nav */
+}
+
+.setting-section {
+  background-color: var(--color-main-content-bg);
+  border-radius: 15px;
+  padding: 25px 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.section-header {
+  font-size: 22px;
+  color: var(--color-accent-primary);
+  font-weight: 500;
+  margin-bottom: 15px;
+  border-bottom: 1px solid rgba(182, 212, 207, 0.2);
+  padding-bottom: 10px;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.setting-label {
+  font-size: 16px;
+  font-weight: 400;
+}
+
+/* Стили для переключателя темы (аналог современного UI-элемента) */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.theme-switch {
+  display: inline-block;
+  height: 20px;
+  position: relative;
+  width: 40px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: .4s;
+  border-radius: 20px;
+}
+
+.slider:before {
+  background-color: white;
+  bottom: 2px;
+  content: "";
+  height: 16px;
+  left: 2px;
+  position: absolute;
+  transition: .4s;
+  width: 16px;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--color-accent-primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+/* Стили для выбора языка (ComboBox) */
+.language-select {
+    padding: 8px 15px;
+    border-radius: 10px;
+    border: 1px solid rgba(182, 212, 207, 0.3);
+    background-color: var(--color-input-background);
+    color: var(--color-input-text);
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    /* Иконка стрелки вниз в стиле UI */
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%23b6d4cf" d="M8 11.5l-4-4h8l-4 4z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+    font-size: 14px;
+}
+
+/* Стили для страницы входа */
+#loginPage {
+  margin: 0;
+  background-color: #131515;
+  font-family: "Montserrat", sans-serif;
+  color: #b6d4cf;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.wrapper {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.center-title {
+  position: absolute;
+  top: 15%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.center-title h1 {
+  color: #339989;
+  font-size: 72px;
+  margin: 0;
+}
+
+.center-title p {
+  font-size: 18px;
+  color: #5fa99b;
+  margin-top: 10px;
+}
+
+.bottom-box {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #339989;
+  border-top-left-radius: 25px;
+  border-top-right-radius: 25px;
+  width: 550px;
+  max-height: 75vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.4);
+  padding: 30px 0 20px 0;
+  text-align: center;
+  overflow-y: auto;
+}
+
+.bottom-box h2 {
+  color: #ffffff;
+  margin: 0 0 25px 0;
+  font-size: 24px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.input-group {
+  width: 70%;
+  margin-bottom: 20px;
+  text-align: left;
+  position: relative;
+}
+
+.input-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: #ffeaea;
+  font-weight: 600;
+  text-align: left;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(19, 21, 21, 0.3);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+.input-group input::placeholder {
+  color: #ddcaca;
+}
+
+.input-group input:focus {
+  outline: none;
+  background-color: rgba(19, 21, 21, 0.5);
+}
+
+.password-field {
+  position: relative;
+}
+
+.eye {
+  position: absolute;
+  right: 15px;
+  top: 65%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #ffeaea;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 20px;
+}
+
+.links {
+  text-align: center;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.links a {
+  color: #ffeaea;
+  text-decoration: none;
+}
+
+.links .link {
+  font-weight: 600;
+  text-decoration: underline;
+  color: #ffeaea;
+}
+
+.login-btn {
+  background-color: rgba(19, 21, 21, 0.8);
+  color: #ffeaea;
+  border: none;
+  border-radius: 25px;
+  padding: 12px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 70%;
+  transition: all 0.3s;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.login-btn:hover {
+  background-color: rgba(19, 21, 21, 0.9);
+}
+
+.register {
+  font-size: 13px;
+  margin-top: 5px;
+  color: #ffeaea;
+}
+
+.register a {
+  color: #ffeaea;
+  text-decoration: underline;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Стили для страницы регистрации */
+#registrationPage {
+  background-color: #131515;
+  color: #ddcaca;
+  min-height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
+
+.registration-section {
+  width: 45%;
+  background-color: #339989;
+  display: flex;
+  flex-direction: column;
+  padding: 60px 50px 30px 50px;
+  overflow-y: auto;
+  max-height: 100vh;
+  justify-content: flex-start;
+  border-radius: 0 40px 40px 0;
+}
+
+.logo-section {
+  width: 55%;
+  background-color: #131515;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.registration-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.divider {
+  height: 2px;
+  background-color: white;
+  margin: 12px 0 15px 0;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.form-label {
+  font-weight: 500;
+  color: white;
+  font-size: 14px;
+  min-width: 120px;
+  text-align: right;
+}
+
+.form-input {
+  flex: 1;
+  padding: 12px 16px;
+  background-color: rgba(19, 21, 21, 0.3);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.form-input::placeholder {
+  color: #ddcaca;
+}
+
+.form-input:focus {
+  outline: none;
+  background-color: rgba(19, 21, 21, 0.5);
+}
+
+.select-wrapper {
+  position: relative;
+  flex: 1;
+}
+
+.select-wrapper::after {
+  content: "▼";
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #ddcaca;
+  pointer-events: none;
+  font-size: 12px;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(19, 21, 21, 0.3);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.form-select:focus {
+  outline: none;
+  background-color: rgba(19, 21, 21, 0.5);
+}
+
+.create-account-btn {
+  width: 100%;
+  padding: 14px;
+  background-color: rgba(19, 21, 21, 0.7);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  margin-top: 25px;
+  margin-bottom: 20px;
+}
+
+.create-account-btn:hover {
+  background-color: rgba(19, 21, 21, 0.9);
+}
+
+.bottom-links {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 10px;
+}
+
+.bottom-link {
+  color: white;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.bottom-link:hover {
+  color: #ddcaca;
+  text-decoration: underline;
+}
+
+.main-logo {
+  font-size: 48px;
+  font-weight: bold;
+  color: #339989;
+  margin-bottom: 15px;
+  text-align: center;
+  z-index: 2;
+}
+
+.tagline {
+  font-size: 16px;
+  color: #339989;
+  text-align: center;
+  max-width: 350px;
+  font-weight: 500;
+  z-index: 2;
+}
+
+.text-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  padding: 15px;
+  opacity: 0.1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.text-word {
+  font-size: 18px;
+  color: #339989;
+  margin-right: 20px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+/* Стили для страницы восстановления пароля */
+#passwordRecoveryPage {
+  margin: 0;
+  background-color: #131515;
+  font-family: "Montserrat", sans-serif;
+  color: #b6d4cf;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.recovery-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.recovery-center-title {
+  position: absolute;
+  top: 25%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+}
+
+.recovery-center-title h1 {
+  color: #339989;
+  font-size: 72px;
+  margin: 0;
+}
+
+.recovery-center-title p {
+  font-size: 18px;
+  color: #5fa99b;
+  margin-top: 10px;
+}
+
+.recovery-center-box {
+  background-color: #339989;
+  border-radius: 25px;
+  width: 450px;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 30px 0;
+  text-align: center;
+  position: absolute;
+  top: 65%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.recovery-center-box h2 {
+  color: #ffeaea;
+  margin: 0 0 25px 0;
+  font-size: 24px;
+}
+
+.recovery-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.recovery-input-group {
+  width: 75%;
+  margin-bottom: 18px;
+  text-align: left;
+  position: relative;
+}
+
+.recovery-input-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  color: #ffeaea;
+  font-weight: 600;
+  text-align: left;
+}
+
+.recovery-input-group input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(19, 21, 21, 0.3);
+  border: none;
+  border-radius: 20px;
+  color: white;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.3s;
+}
+
+.recovery-input-group input::placeholder {
+  color: #ddcaca;
+}
+
+.recovery-input-group input:focus {
+  outline: none;
+  background-color: rgba(19, 21, 21, 0.5);
+}
+
+.recovery-password-field {
+  position: relative;
+}
+
+.recovery-eye {
+  position: absolute;
+  right: 15px;
+  top: 65%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #ffeaea;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  width: 20px;
+}
+
+.reset-btn {
+  background-color: rgba(19, 21, 21, 0.8);
+  color: #ffeaea;
+  border: none;
+  border-radius: 20px;
+  padding: 12px;
+  font-size: 15px;
+  cursor: pointer;
+  width: 75%;
+  transition: all 0.3s;
+  margin-top: 5px;
+  font-weight: 600;
+}
+
+.reset-btn:hover {
+  background-color: rgba(19, 21, 21, 0.9);
+}
+
+.back-link {
+  font-size: 13px;
+  margin-top: 15px;
+  color: #ffeaea;
+}
+
+.back-link a {
+  color: #ffeaea;
+  text-decoration: underline;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.message {
+  font-size: 11px;
+  color: #ffeaea;
+  margin-top: 12px;
+  width: 75%;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Стили для личного кабинета */
+#lkPage {
+  background-color: #131515;
+  color: #b6d4cf;
+  min-height: 100vh;
+  overflow: hidden;
+  font-weight: 400;
+}
+
+/* Верхняя панель */
+.top-nav {
+  background-color: #339989;
+  padding: 15px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 70px;
+  box-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: 400;
+  color: #131515;
+  letter-spacing: 1px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 35px;
+}
+
+.nav-links a {
+  color: #131515;
+  text-decoration: none;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  padding: 8px 15px;
+  border-radius: 15px;
+}
+
+.nav-links a:hover {
+  background-color: rgba(19, 21, 21, 0.2);
+  transform: translateY(-2px);
+}
+
+.nav-links a.active {
+  background-color: rgba(19, 21, 21, 0.2);
+}
+
+/* Боковая панель */
+.sidebar {
+  background-color: #414a48;
+  width: 320px;
+  height: 100vh;
+  position: fixed;
+  top: 70px;
+  left: -320px;
+  transition: left 0.4s ease;
+  padding: 40px 25px;
+  display: flex;
+  flex-direction: column;
+  z-index: 99;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar.active {
+  left: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 50px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid #339989;
+}
+
+.avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background-color: #414a48;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  color: #b6d4cf;
+  font-weight: 500;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  border: 2px solid #339989;
+}
+
+.user-name {
+  font-size: 20px;
+  text-align: center;
+  color: #b6d4cf;
+  font-weight: 400;
+}
+
+.sidebar-menu {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.menu-item {
+  color: #b6d4cf;
+  padding: 15px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 400;
+  text-align: center;
+  font-size: 18px;
+  border-radius: 10px;
+}
+
+.menu-item:hover {
+  color: #b6d4cf;
+  background-color: rgba(182, 212, 207, 0.1);
+  transform: translateX(10px);
+}
+
+.divider {
+  height: 1px;
+  background-color: #339989;
+  margin: 20px 0;
+  opacity: 0.5;
+}
+
+.logout-btn {
+  background: none;
+  border: none;
+  color: #b6d4cf;
+  padding: 15px 20px;
+  cursor: pointer;
+  font-weight: 400;
+  font-size: 18px;
+  transition: all 0.3s ease;
+  text-align: center;
+  border-radius: 10px;
+}
+
+.logout-btn:hover {
+  color: #b6d4cf;
+  background-color: rgba(182, 212, 207, 0.1);
+  transform: translateX(10px);
+}
+
+/* Основной контент */
+.main-content {
+  margin-top: 90px;
+  padding: 40px;
+  transition: margin-left 0.4s ease;
+  height: calc(100vh - 90px);
+  overflow-y: auto;
+}
+
+.main-content.shifted {
+  margin-left: 320px;
+}
+
+.welcome-section {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.welcome-text {
+  font-size: 32px;
+  margin-bottom: 15px;
+  color: #b6d4cf;
+  font-weight: 400;
+}
+
+/* Панель управления для новых работ */
+.control-panel {
+  background-color: #414a48;
+  border-radius: 20px;
+  padding: 25px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(51, 153, 137, 0.3);
+}
+
+.panel-title {
+  font-size: 20px;
+  color: #b6d4cf;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.panel-content {
+  display: flex;
+  gap: 30px;
+  align-items: flex-end;
+}
+
+.work-type-selection,
+.tariff-selection {
+  flex: 1;
+}
+
+.tariff-label,
+.work-type-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #b6d4cf;
+}
+
+.tariff-select,
+.work-type-select {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: rgba(19, 21, 21, 0.3);
+  border: 1px solid rgba(51, 153, 137, 0.3);
+  border-radius: 10px;
+  color: #b6d4cf;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.tariff-select:focus,
+.work-type-select:focus {
+  outline: none;
+  border-color: #339989;
+  background-color: rgba(19, 21, 21, 0.5);
+}
+
+.upload-section {
+  flex: 1;
+}
+
+.upload-btn {
+  background-color: #339989;
+  color: #131515;
+  border: none;
+  padding: 12px 30px;
+  border-radius: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  width: 100%;
+  font-size: 16px;
+}
+
+.upload-btn:hover {
+  background-color: #5fa99b;
+  transform: translateY(-2px);
+}
+
+/* Блоки уже проверенных работ */
+.works-header {
+  margin-bottom: 25px;
+  padding: 0 10px;
+}
+
+.works-header h2 {
+  color: #b6d4cf;
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.works-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.work-card {
+  background-color: #414a48;
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(51, 153, 137, 0.3);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.work-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  border-color: #339989;
+}
+
+.work-header {
+  margin-bottom: 15px;
+}
+
+.work-title {
+  font-size: 18px;
+  color: #b6d4cf;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.work-details {
+  margin-bottom: 15px;
+  flex-grow: 1;
+}
+
+.work-tariff {
+  background-color: rgba(51, 153, 137, 0.2);
+  padding: 12px 15px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  border-left: 4px solid #339989;
+  margin-top: 10px;
+}
+
+.tariff-price {
+  color: #339989;
+  font-weight: 600;
+}
+
+.work-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+.details-btn {
+  background-color: rgba(51, 153, 137, 0.3);
+  color: #b6d4cf;
+  border: 1px solid #339989;
+  padding: 10px 20px;
+  border-radius: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.details-btn:hover {
+  background-color: rgba(51, 153, 137, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Кнопка открытия боковой панели */
+.menu-toggle {
+  background: rgba(19, 21, 21, 0.2);
+  border: none;
+  color: #131515;
+  font-size: 28px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  margin-right: 20px;
+}
+
+.menu-toggle:hover {
+  background: rgba(19, 21, 21, 0.3);
+  transform: scale(1.1);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+}
+
+.user-info-nav {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #131515;
+  font-weight: 500;
+}
+
+/* Стили для страницы деталей работы */
+#workDetailsPage {
+  background-color: #131515;
+  color: #b6d4cf;
+  min-height: 100vh;
+  overflow: hidden;
+  font-weight: 400;
+}
+
+.work-details-container {
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+  padding: 0 40px;
+}
+
+.work-content {
+  flex: 1;
+  background-color: #414a48;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  max-height: calc(100vh - 180px);
+}
+
+.work-sidebar {
+  width: 350px;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.status-section,
+.previous-files-section {
+  background-color: #414a48;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.work-title {
+  font-size: 24px;
+  margin-bottom: 10px;
+  color: #b6d4cf;
+  font-weight: 500;
+}
+
+.work-deadline {
+  color: #b6d4cf;
+  font-size: 16px;
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+
+.work-file-name {
+  background-color: rgba(51, 153, 137, 0.2);
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  font-weight: 500;
+  border-left: 4px solid #339989;
+}
+
+.work-text {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.work-text h3 {
+  color: #b6d4cf;
+  font-size: 18px;
+  margin: 20px 0 10px 0;
+  font-weight: 500;
+}
+
+.work-text ul,
+.work-text ol {
+  margin-left: 20px;
+  margin-bottom: 15px;
+}
+
+.work-text li {
+  margin-bottom: 8px;
+}
+
+.section-title {
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: #b6d4cf;
+  font-weight: 500;
+  border-bottom: 2px solid #339989;
+  padding-bottom: 10px;
+}
+
+.status-info {
+  margin-bottom: 25px;
+}
+
+.status-label {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.status-value {
+  padding: 10px 15px;
+  border-radius: 10px;
+  display: inline-block;
+  font-weight: 500;
+}
+
+.status-rejected {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.ai-comment {
+  background-color: rgba(19, 21, 21, 0.3);
+  padding: 20px;
+  border-radius: 10px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+  border-left: 4px solid #339989;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #b6d4cf;
+  opacity: 0.8;
+}
+
+.file-list {
+  list-style-type: none;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(51, 153, 137, 0.3);
+}
+
+.file-item:last-child {
+  border-bottom: none;
+}
+
+.file-checkbox {
+  margin-right: 15px;
+  transform: scale(1.3);
+}
+
+.file-name {
+  color: #b6d4cf;
+  text-decoration: none;
+  transition: color 0.3s ease;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 10px;
+}
+
+.file-name:hover {
+  color: #339989;
+}
+
+.file-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.status-rejected-badge {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+/* Кнопка назад на странице деталей */
+.back-btn {
+  background: rgba(19, 21, 21, 0.2);
+  border: none;
+  color: #131515;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  margin-right: 20px;
+}
+
+.back-btn:hover {
+  background: rgba(19, 21, 21, 0.3);
+  transform: scale(1.05);
+}
+
+/* Стили для страницы загрузки файла */
+#uploadFilePage {
+  background-color: #131515;
+  color: #b6d4cf;
+  min-height: 100vh;
+  overflow: hidden;
+  font-weight: 400;
+}
+
+.upload-section {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.section-title {
+  font-size: 32px;
+  color: #b6d4cf;
+  font-weight: 400;
+  margin-bottom: 20px;
+}
+
+.section-description {
+  font-size: 18px;
+  color: #b6d4cf;
+  font-weight: 300;
+  margin-bottom: 40px;
+  line-height: 1.6;
+}
+
+.upload-area {
+  background-color: #414a48;
+  border: 3px dashed #339989;
+  border-radius: 25px;
+  padding: 60px 40px;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.upload-area:hover {
+  background-color: rgba(51, 153, 137, 0.1);
+  border-color: #5fa99b;
+}
+
+.upload-area.dragover {
+  background-color: rgba(51, 153, 137, 0.2);
+  border-color: #5fa99b;
+  transform: scale(1.02);
+}
+
+.upload-icon {
+  font-size: 64px;
+  color: #339989;
+  margin-bottom: 20px;
+}
+
+.upload-text {
+  font-size: 20px;
+  color: #b6d4cf;
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.upload-subtext {
+  font-size: 16px;
+  color: #b6d4cf;
+  opacity: 0.8;
+}
+
+.file-input {
+  display: none;
+}
+
+.file-input-label {
+  display: inline-block;
+  background-color: #339989;
+  color: #131515;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.file-input-label:hover {
+  background-color: #5fa99b;
+  transform: translateY(-2px);
+}
+
+.selected-file {
+  background-color: #414a48;
+  border-radius: 15px;
+  padding: 20px;
+  margin-top: 20px;
+  display: none;
+}
+
+.file-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.file-icon {
+  font-size: 24px;
+  color: #339989;
+}
+
+.file-details {
+  text-align: left;
+}
+
+.file-name {
+  font-weight: 600;
+  color: #b6d4cf;
+  margin-bottom: 5px;
+}
+
+.file-size {
+  font-size: 14px;
+  color: #b6d4cf;
+  opacity: 0.7;
+}
+
+.check-button {
+  background-color: #339989;
+  color: #131515;
+  border: none;
+  padding: 12px 40px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 30px;
+  font-size: 18px;
+  display: none;
+}
+
+.check-button:hover {
+  background-color: #5fa99b;
+  transform: translateY(-2px);
+}
+
+/* Стили для поля ключа компании */
+#companyKeyGroup {
+  transition: all 0.3s ease;
+}
+
+#companyKeyGroup.visible {
+  display: flex !important;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Стили для выбора типа клиента */
+.client-type-selector {
+  display: flex;
+  background-color: rgba(19, 21, 21, 0.3);
+  border-radius: 20px;
+  padding: 4px;
+  margin-top: 5px;
+}
+
+.client-type-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: #ddcaca;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.client-type-btn.active {
+  background-color: rgba(19, 21, 21, 0.8);
+  color: #ffeaea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.client-type-btn:hover:not(.active) {
+  background-color: rgba(19, 21, 21, 0.5);
+  color: #ffeaea;
+}
+
+/* Анимация для появления поля ключа компании */
+/* Стили для поля ключа компании с плавной анимацией */
+#companyKeyGroup {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+/* Убедимся, что панель входа имеет достаточную высоту */
+.bottom-box {
+  min-height: 450px;
+  height: auto;
+}
+
+#companyKeyGroup.visible {
+  opacity: 1;
+  height: auto;
+  display: flex !important;
+  animation: fadeIn 0.3s ease;
+}
+
+.registration-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.registration-section::-webkit-scrollbar-track {
+  background: rgba(19, 21, 21, 0.2);
+  border-radius: 3px;
+}
+
+.registration-section::-webkit-scrollbar-thumb {
+  background: rgba(19, 21, 21, 0.5);
+  border-radius: 3px;
+}
+
+.registration-section::-webkit-scrollbar-thumb:hover {
+  background: rgba(19, 21, 21, 0.7);
+}
+
+/* Стили для статичного тарифа в ЛК компании */
+.static-tariff {
+  background-color: rgba(51, 153, 137, 0.2);
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: #b6d4cf;
+  font-weight: 500;
+  border-left: 4px solid #339989;
+  margin-top: 5px;
+}
+
+/* Стили для даты проверки в ЛК компании */
+.work-date {
+  color: #b6d4cf;
+  font-size: 14px;
+  opacity: 0.8;
+  margin-top: 8px;
+}
+
+/* Стили для бейджа типа клиента */
+.client-type-badge {
+  display: inline-block;
+  background-color: rgba(51, 153, 137, 0.3);
+  color: #b6d4cf;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  margin-left: 10px;
+  border: 1px solid rgba(51, 153, 137, 0.5);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .bottom-box {
+    width: 90%;
+    max-height: 85vh;
+  }
+
+  .input-group {
+    width: 85%;
+  }
+
+  .login-btn {
+    width: 85%;
+  }
+
+  .recovery-center-box {
+    width: 90%;
+  }
+
+  .recovery-input-group {
+    width: 85%;
+  }
+
+  .reset-btn {
+    width: 85%;
+  }
+
+  .registration-section {
+    width: 100%;
+    border-radius: 0;
+  }
+
+  .logo-section {
+    display: none;
+  }
+
+  .works-container {
+    grid-template-columns: 1fr;
+  }
+
+  .work-details-container {
+    flex-direction: column;
+    padding: 0 20px;
+  }
+
+  .work-sidebar {
+    width: 100%;
+  }
+
+  .main-content.shifted {
+    margin-left: 0;
+  }
+
+  .sidebar {
+    width: 280px;
+  }
+}
+/* Стили для выбора типа клиента */
+.client-type-selector {
+  display: flex;
+  background-color: rgba(19, 21, 21, 0.3);
+  border-radius: 20px;
+  padding: 4px;
+  margin-top: 5px;
+}
+
+.client-type-btn {
+  flex: 1;
+  padding: 10px 16px;
+  border: none;
+  background: none;
+  color: #ddcaca;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 16px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.client-type-btn.active {
+  background-color: rgba(19, 21, 21, 0.8);
+  color: #ffeaea;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.client-type-btn:hover:not(.active) {
+  background-color: rgba(19, 21, 21, 0.5);
+  color: #ffeaea;
+}
+
+/* Анимация для поля ключа компании */
+#companyKeyGroup {
+  transition: all 0.3s ease;
+  opacity: 0;
+  display: none;
+}
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+  .client-type-selector {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .client-type-btn {
+    padding: 12px 16px;
+  }
+}
+/* --- Стили для страницы настроек (settings.html) --- */
+
+.settings-page-content {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-top: 80px; /* Отступ сверху, чтобы контент не перекрывался top-nav */
+}
+
+/* Блок настроек (карточка), который должен быть темным */
+.settings-card {
+  background-color: var(--color-main-content-bg); /* Использует #414a48 в темной теме */
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  padding: 30px 40px;
+  width: 100%;
+  max-width: 500px;
+  color: var(--color-text-main);
+  transition: background-color 0.3s, color 0.3s; /* Плавный переход при смене темы */
+}
+
+.settings-card h1 {
+  font-size: 28px;
+  color: var(--color-text-main);
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--color-accent-primary);
+  font-weight: 500;
+}
+
+.setting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.setting-label {
+  font-size: 18px;
+  color: var(--color-text-main);
+}
+
+.theme-label {
+  font-size: 18px;
+  color: var(--color-text-main);
+  min-width: 50px;
+  text-align: right;
+}
+
+/* Стили для переключателя темы (дополнения к стилям из Задачи 1) */
+.theme-switch-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+.theme-switch {
+  display: inline-block;
+  height: 24px;
+  position: relative;
+  width: 48px;
+  margin-right: 10px;
+}
+
+.theme-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  background-color: #ccc;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: 0.4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  background-color: white;
+  bottom: 4px;
+  content: "";
+  height: 16px;
+  left: 4px;
+  position: absolute;
+  transition: 0.4s;
+  width: 16px;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: var(--color-accent-primary);
+}
+
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+
+/* Стили для выбора языка */
+.language-select {
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 1px solid rgba(182, 212, 207, 0.4);
+  background-color: var(--color-input-background);
+  color: var(--color-input-text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-size: 16px;
+  min-width: 120px;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill="%23b6d4cf" d="M8 11.5l-4-4h8l-4 4z"/></svg>');
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+}
+
+/* Стили для кнопки сохранения */
+.save-settings-btn {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  margin-top: 30px;
+  background-color: var(--color-accent-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.save-settings-btn:hover {
+  background-color: #2a7e71;
+}
+
+.hint-text {
+  font-size: 14px;
+  color: var(--color-secondary-text);
+  margin-top: 15px;
+  text-align: center;
+}

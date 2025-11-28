@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Результат проверки</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      /* ============================================
+           PROCESS FILE PAGE - ВСЕ СТИЛИ
+           ============================================ */
+
+      #processFilePage {
+        background-color: #131515;
+        color: #b6d4cf;
+        min-height: 100vh;
+        font-family: "Montserrat", sans-serif;
+      }
+
+      #processFilePage .main-content {
+        margin-top: 90px;
+        padding: 40px;
+      }
+
+      #processFilePage .work-details-container {
+        display: flex;
+        gap: 30px;
+      }
+
+      #processFilePage .work-content {
+        flex: 1;
+        background-color: #414a48;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      #processFilePage .work-sidebar {
+        width: 320px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex-shrink: 0;
+      }
+
+      #processFilePage .work-title {
+        font-size: 26px;
+        color: #b6d4cf;
+        margin: 0 0 25px 0;
+        font-weight: 500;
+      }
+
+      /* Информация о файле */
+      #processFilePage .file-info-block {
+        border-left: 4px solid #339989;
+        background: rgba(51, 153, 137, 0.1);
+        padding: 18px 22px;
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 30px;
+      }
+
+      #processFilePage .file-info-block div {
+        margin-bottom: 8px;
+        color: #b6d4cf;
+        font-size: 14px;
+      }
+
+      #processFilePage .file-info-block div:last-child {
+        margin-bottom: 0;
+      }
+
+      #processFilePage .file-info-block strong {
+        color: #5fa99b;
+      }
+
+      /* ============================================
+           СТАТИСТИКА
+           ============================================ */
+
+      #processFilePage .stats-banner {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 30px;
+        flex-wrap: wrap;
+      }
+
+      #processFilePage .stat-card {
+        background: #2c3332;
+        padding: 22px 28px;
+        border-radius: 14px;
+        text-align: center;
+        min-width: 150px;
+        flex: 1;
+        border: 1px solid rgba(51, 153, 137, 0.25);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      #processFilePage .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+      }
+
+      #processFilePage .stat-number {
+        font-size: 26px;
+        font-weight: 600;
+        display: block;
+        margin-bottom: 6px;
+        line-height: 1.2;
+      }
+
+      #processFilePage .stat-label {
+        font-size: 13px;
+        color: #888;
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      #processFilePage .stat-total .stat-number {
+        color: #b6d4cf;
+      }
+      #processFilePage .stat-correct .stat-number {
+        color: #81c784;
+      }
+      #processFilePage .stat-incorrect .stat-number {
+        color: #ffcc80;
+      }
+
+      /* Блок с общим описанием */
+      #processFilePage .summary-block {
+        background: rgba(51, 153, 137, 0.1);
+        border-left: 4px solid #339989;
+        padding: 18px 22px;
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 30px;
+        color: #b6d4cf;
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      /* ============================================
+           СЕКЦИИ
+           ============================================ */
+
+      #processFilePage .references-section {
+        margin-top: 35px;
+      }
+
+      #processFilePage .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding: 16px 22px;
+        border-radius: 12px;
+      }
+
+      #processFilePage .section-header h3 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 500;
+      }
+
+      #processFilePage .section-count {
+        background: rgba(255, 255, 255, 0.12);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      #processFilePage .section-success {
+        background: rgba(76, 175, 80, 0.12);
+        border-left: 4px solid #4caf50;
+      }
+
+      #processFilePage .section-success h3,
+      #processFilePage .section-success .section-count {
+        color: #81c784;
+      }
+
+      #processFilePage .section-warning {
+        background: rgba(255, 183, 77, 0.12);
+        border-left: 4px solid #ffb74d;
+      }
+
+      #processFilePage .section-warning h3,
+      #processFilePage .section-warning .section-count {
+        color: #ffcc80;
+      }
+
+      /* ============================================
+           КАРТОЧКА С ОШИБКАМИ
+           ============================================ */
+
+      #processFilePage .incorrect-ref-card {
+        background: #2c3332;
+        border: 1px solid rgba(255, 183, 77, 0.25);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+        transition: border-color 0.2s;
+      }
+
+      #processFilePage .incorrect-ref-card:hover {
+        border-color: rgba(255, 183, 77, 0.4);
+      }
+
+      #processFilePage .ref-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      #processFilePage .ref-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        font-weight: 600;
+        font-size: 14px;
+        flex-shrink: 0;
+      }
+
+      #processFilePage .ref-number.warning {
+        background: #ffb74d;
+        color: #333;
+      }
+
+      #processFilePage .ref-number.success {
+        background: #4caf50;
+        color: white;
+      }
+
+      #processFilePage .ref-type {
+        display: inline-block;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+        text-transform: lowercase;
+      }
+
+      #processFilePage .ref-type.warning {
+        background: rgba(255, 183, 77, 0.18);
+        color: #ffcc80;
+      }
+
+      #processFilePage .ref-type.success {
+        background: rgba(76, 175, 80, 0.18);
+        color: #81c784;
+      }
+
+      /* ============================================
+           БЛОКИ ТЕКСТА
+           ============================================ */
+
+      #processFilePage .original-block {
+        background: rgba(0, 0, 0, 0.2);
+        border-left: 3px solid #78909c;
+        padding: 14px 18px;
+        border-radius: 0 10px 10px 0;
+        margin-bottom: 16px;
+      }
+
+      #processFilePage .block-label {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: #90a4ae;
+      }
+
+      #processFilePage .block-label.warning {
+        color: #ffcc80;
+      }
+
+      #processFilePage .block-label.success {
+        color: #4db6ac;
+      }
+
+      #processFilePage .block-text {
+        color: #b6d4cf;
+        line-height: 1.7;
+        font-size: 14px;
+      }
+
+      #processFilePage .block-text ul {
+        margin: 8px 0 0 0;
+        padding-left: 22px;
+      }
+
+      #processFilePage .block-text li {
+        margin-bottom: 6px;
+        line-height: 1.5;
+      }
+
+      /* ============================================
+           БЛОК ОШИБОК
+           ============================================ */
+
+      #processFilePage .errors-block {
+        background: rgba(255, 183, 77, 0.08);
+        border: 1px solid rgba(255, 183, 77, 0.2);
+        border-radius: 10px;
+        padding: 18px;
+        margin-bottom: 16px;
+      }
+
+      #processFilePage .error-item {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 8px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+
+      #processFilePage .error-item:last-child {
+        margin-bottom: 0;
+      }
+
+      #processFilePage .error-desc {
+        color: #ffe0b2;
+        font-size: 14px;
+        margin-bottom: 6px;
+        line-height: 1.5;
+      }
+
+      #processFilePage .error-detail {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+        margin-top: 8px;
+      }
+
+      #processFilePage .wrong-text {
+        color: #ffab91;
+        text-decoration: line-through;
+      }
+
+      #processFilePage .right-text {
+        color: #a5d6a7;
+      }
+
+      #processFilePage .right-text::before {
+        content: "→ ";
+        opacity: 0.6;
+      }
+
+      /* Список ошибок/замечаний */
+      #processFilePage .errors-list {
+        background: rgba(255, 183, 77, 0.08);
+        border-radius: 10px;
+        padding: 14px 18px;
+        margin-bottom: 16px;
+      }
+
+      #processFilePage .errors-list ul {
+        margin: 8px 0 0 0;
+        padding-left: 22px;
+        color: #ffe0b2;
+      }
+
+      #processFilePage .errors-list li {
+        margin-bottom: 6px;
+        line-height: 1.5;
+      }
+
+      /* ============================================
+           ИСПРАВЛЕННЫЙ ВАРИАНТ / РЕКОМЕНДАЦИИ
+           ============================================ */
+
+      #processFilePage .corrected-block {
+        background: rgba(51, 153, 137, 0.12);
+        border-left: 3px solid #339989;
+        padding: 14px 18px;
+        border-radius: 0 10px 10px 0;
+      }
+
+      #processFilePage .corrected-block .block-text {
+        color: #b6d4cf;
+        font-weight: 500;
+      }
+
+      #processFilePage .corrected-block ul {
+        margin: 8px 0 0 0;
+        padding-left: 22px;
+        color: #b6d4cf;
+      }
+
+      #processFilePage .corrected-block li {
+        margin-bottom: 6px;
+        font-weight: 400;
+      }
+
+      /* ============================================
+           СПИСОК ПРОВЕРКИ ЭЛЕМЕНТОВ (ГОСТ 7.32)
+           ============================================ */
+
+      #processFilePage .elements-check-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      #processFilePage .element-check {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        font-size: 14px;
+        transition: background 0.2s;
+      }
+
+      #processFilePage .element-check:hover {
+        background: rgba(0, 0, 0, 0.25);
+      }
+
+      #processFilePage .element-check .check-icon {
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+
+      #processFilePage .element-check.check-ok .check-icon {
+        background: rgba(76, 175, 80, 0.25);
+        color: #81c784;
+      }
+
+      #processFilePage .element-check.check-fail .check-icon {
+        background: rgba(255, 183, 77, 0.25);
+        color: #ffcc80;
+      }
+
+      #processFilePage .element-check.check-ok > span:last-child {
+        color: #b6d4cf;
+      }
+
+      #processFilePage .element-check.check-fail > span:last-child {
+        color: #90a4ae;
+      }
+
+      /* ============================================
+           КАРТОЧКА КОРРЕКТНОГО ЭЛЕМЕНТА
+           ============================================ */
+
+      #processFilePage .correct-ref-card {
+        background: #2a3533;
+        border: 1px solid rgba(76, 175, 80, 0.25);
+        border-radius: 14px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        transition: border-color 0.2s;
+      }
+
+      #processFilePage .correct-ref-card:hover {
+        border-color: rgba(76, 175, 80, 0.4);
+      }
+
+      #processFilePage .correct-ref-card .ref-content {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      #processFilePage .correct-ref-card .ref-body {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      #processFilePage .correct-ref-card .ref-text {
+        color: #b6d4cf;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      #processFilePage .correct-icon {
+        color: #81c784;
+        font-size: 13px;
+        font-weight: 600;
+        background: rgba(76, 175, 80, 0.2);
+        padding: 6px 12px;
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+
+      /* ============================================
+           ОБЩИЕ РЕКОМЕНДАЦИИ
+           ============================================ */
+
+      #processFilePage .recommendations-section {
+        background: #2c3332;
+        padding: 22px;
+        border-radius: 14px;
+        margin-top: 35px;
+        border: 1px solid rgba(51, 153, 137, 0.25);
+      }
+
+      #processFilePage .recommendations-section h4 {
+        color: #b6d4cf;
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 500;
+      }
+
+      #processFilePage .recommendations-section > ul {
+        margin: 0;
+        padding-left: 22px;
+      }
+
+      #processFilePage .recommendations-section > ul > li {
+        color: #90a4ae;
+        margin-bottom: 10px;
+        line-height: 1.6;
+      }
+
+      /* ============================================
+           ПУСТОЕ СОСТОЯНИЕ И ОШИБКИ
+           ============================================ */
+
+      #processFilePage .empty-state {
+        text-align: center;
+        padding: 60px 30px;
+        background: #2c3332;
+        border-radius: 14px;
+        margin: 25px 0;
+      }
+
+      #processFilePage .empty-state h3 {
+        color: #b6d4cf;
+        margin: 0 0 12px 0;
+        font-size: 20px;
+        font-weight: 500;
+      }
+
+      #processFilePage .empty-state p {
+        color: #888;
+        margin: 0;
+        font-size: 14px;
+      }
+
+      #processFilePage .error-result {
+        background: rgba(255, 183, 77, 0.1);
+        padding: 28px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 183, 77, 0.25);
+      }
+
+      #processFilePage .error-result h4 {
+        color: #ffcc80;
+        margin: 0 0 12px 0;
+        font-size: 18px;
+      }
+
+      #processFilePage .error-result p {
+        color: #ffe0b2;
+        margin: 0;
+        line-height: 1.6;
+      }
+
+      /* ============================================
+           БОКОВАЯ ПАНЕЛЬ
+           ============================================ */
+
+      #processFilePage .sidebar-section {
+        background: #414a48;
+        padding: 25px;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      #processFilePage .sidebar-section h3 {
+        font-size: 16px;
+        color: #b6d4cf;
+        margin: 0 0 20px 0;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #339989;
+        font-weight: 500;
+      }
+
+      #processFilePage .sidebar-btn {
+        width: 100%;
+        padding: 14px 20px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s;
+        display: block;
+        text-align: center;
+        text-decoration: none;
+        border: none;
+        font-family: inherit;
+      }
+
+      #processFilePage .sidebar-btn:hover {
+        transform: translateY(-2px);
+      }
+
+      #processFilePage .sidebar-btn.primary {
+        background: #339989;
+        color: white;
+      }
+
+      #processFilePage .sidebar-btn.primary:hover {
+        background: #3aaa98;
+      }
+
+      #processFilePage .sidebar-btn.secondary {
+        background: transparent;
+        color: #b6d4cf;
+        border: 1px solid #5fa99b;
+        margin-top: 12px;
+      }
+
+      #processFilePage .sidebar-btn.secondary:hover {
+        background: rgba(95, 169, 155, 0.1);
+      }
+
+      #processFilePage .sidebar-btn.tertiary {
+        background: transparent;
+        color: #888;
+        border: 1px solid #555;
+        margin-top: 12px;
+      }
+
+      #processFilePage .sidebar-btn.tertiary:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: #aaa;
+      }
+
+      /* Сводка */
+      #processFilePage .summary-stats {
+        font-size: 14px;
+      }
+
+      #processFilePage .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        color: #888;
+      }
+
+      #processFilePage .summary-row:last-child {
+        margin-bottom: 0;
+      }
+
+      #processFilePage .summary-row strong {
+        color: #b6d4cf;
+      }
+
+      #processFilePage .text-success {
+        color: #81c784 !important;
+      }
+      #processFilePage .text-warning {
+        color: #ffcc80 !important;
+      }
+      #processFilePage .text-danger {
+        color: #ffab91 !important;
+      }
+
+      /* ============================================
+           АДАПТИВНОСТЬ
+           ============================================ */
+
+      @media (max-width: 1024px) {
+        #processFilePage .work-details-container {
+          flex-direction: column;
+        }
+
+        #processFilePage .work-sidebar {
+          width: 100%;
+          flex-direction: row;
+          flex-wrap: wrap;
+        }
+
+        #processFilePage .sidebar-section {
+          flex: 1;
+          min-width: 280px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        #processFilePage .main-content {
+          padding: 20px;
+        }
+
+        #processFilePage .stats-banner {
+          flex-direction: column;
+        }
+
+        #processFilePage .stat-card {
+          min-width: auto;
+        }
+
+        #processFilePage .work-content {
+          padding: 20px;
+        }
+
+        #processFilePage .sidebar-section {
+          min-width: 100%;
+        }
+
+        #processFilePage .element-check {
+          padding: 10px 12px;
+          font-size: 13px;
+        }
+
+        #processFilePage .element-check .check-icon {
+          width: 26px;
+          height: 26px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="processFilePage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <button
+            class="back-btn"
+            onclick="window.location.href='{{ return_route }}'"
+          >
+            ← Назад
+          </button>
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="user-info-nav">{{ user.login }}</div>
+      </nav>
+
+      <main class="main-content">
+        <div class="work-details-container">
+          <!-- Основной контент -->
+          <div class="work-content">
+            <h2 class="work-title">Результат проверки</h2>
+
+            <!-- Информация о файле -->
+            <div class="file-info-block">
+              <div><strong>Файл:</strong> {{ upload.filename }}</div>
+              <div>
+                <strong>Стандарт:</strong> {{ gost.name if gost else 'Не указан'
+                }}
+              </div>
+              <div>
+                <strong>Дата проверки:</strong> {{
+                upload.upload_date.strftime('%d.%m.%Y %H:%M') }}
+              </div>
+            </div>
+
+            {% if result and result.get('success') %} {% if
+            result.get('structure_analysis') %}
+
+            <!-- ========== ГОСТ 7.32-2001 ========== -->
+
+            <!-- Статистика -->
+            <div class="stats-banner">
+              <div class="stat-card stat-total">
+                <span class="stat-number"
+                  >{{ result.document_type|default('Документ') }}</span
+                >
+                <span class="stat-label">Тип документа</span>
+              </div>
+              <div class="stat-card stat-correct">
+                <span class="stat-number"
+                  >{{ result.overall_compliance.score|default(0) }}%</span
+                >
+                <span class="stat-label">Соответствие</span>
+              </div>
+              <div class="stat-card stat-incorrect">
+                <span class="stat-number"
+                  >{{ (result.missing_elements|length if result.missing_elements
+                  else 0) + (result.corrections|length if result.corrections
+                  else 0) }}</span
+                >
+                <span class="stat-label">Замечаний</span>
+              </div>
+            </div>
+
+            {% if result.overall_compliance and
+            result.overall_compliance.summary %}
+            <div class="summary-block">
+              {{ result.overall_compliance.summary }}
+            </div>
+            {% endif %} {% set structure = result.structure_analysis %}
+
+            <!-- ===== Разделы с ошибками ===== -->
+            <div class="references-section">
+              <div class="section-header section-warning">
+                <h3>Разделы, требующие доработки</h3>
+                <span class="section-count"
+                  >{{ (result.missing_elements|length if result.missing_elements
+                  else 0) + 6 }}</span
+                >
+              </div>
+
+              <!-- Отсутствующие элементы -->
+              {% if result.missing_elements %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">!</span>
+                  <span class="ref-type warning">отсутствующие элементы</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">
+                    Не найдены обязательные элементы:
+                  </div>
+                  <div class="block-text">
+                    <ul>
+                      {% for elem in result.missing_elements %}
+                      <li>{{ elem }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендация:</div>
+                  <div class="block-text">
+                    Добавьте указанные элементы в документ согласно требованиям
+                    ГОСТ 7.32-2001
+                  </div>
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Титульный лист -->
+              {% if structure.title_page %} {% set sec = structure.title_page %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">1</span>
+                  <span class="ref-type warning">титульный лист</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Титульный лист не найден{% elif
+                    sec.errors %}Титульный лист найден, но содержит ошибки
+                    оформления{% else %}Титульный лист оформлен корректно{%
+                    endif %}
+                  </div>
+                </div>
+
+                {% if sec.present %}
+                <div class="errors-block">
+                  <div class="block-label warning">Проверка элементов:</div>
+                  <div class="elements-check-list">
+                    <div
+                      class="element-check {% if sec.has_organization %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_organization %}+{% else %}-{% endif
+                        %}</span
+                      >
+                      <span>Наименование организации</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_department %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_department %}+{% else %}-{% endif
+                        %}</span
+                      >
+                      <span>Кафедра/факультет</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_document_type %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_document_type %}+{% else %}-{% endif
+                        %}</span
+                      >
+                      <span>Тип документа</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_topic %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_topic %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Тема работы</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_author %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_author %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Сведения об авторе</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_supervisor %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_supervisor %}+{% else %}-{% endif
+                        %}</span
+                      >
+                      <span>Сведения о руководителе</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_city_year %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_city_year %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Город и год</span>
+                    </div>
+                  </div>
+                </div>
+                {% endif %} {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">
+                    Рекомендации по исправлению:
+                  </div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Содержание -->
+              {% if structure.table_of_contents %} {% set sec =
+              structure.table_of_contents %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">2</span>
+                  <span class="ref-type warning">содержание</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Содержание не найдено{% elif
+                    sec.errors %}Требует доработки{% else %}Оформлено
+                    корректно{% endif %}
+                  </div>
+                </div>
+                {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендации:</div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Введение -->
+              {% if structure.introduction %} {% set sec =
+              structure.introduction %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">3</span>
+                  <span class="ref-type warning">введение</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Введение не найдено{% elif
+                    sec.errors %}Требует доработки{% else %}Оформлено
+                    корректно{% endif %}
+                  </div>
+                </div>
+
+                {% if sec.present %}
+                <div class="errors-block">
+                  <div class="block-label warning">
+                    Проверка обязательных элементов:
+                  </div>
+                  <div class="elements-check-list">
+                    <div
+                      class="element-check {% if sec.has_relevance %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_relevance %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Актуальность темы</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_goal %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_goal %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Цель работы</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_tasks %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_tasks %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Задачи работы</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_object_subject %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_object_subject %}+{% else %}-{% endif
+                        %}</span
+                      >
+                      <span>Объект и предмет исследования</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_methods %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_methods %}+{% else %}-{% endif %}</span
+                      >
+                      <span>Методы исследования</span>
+                    </div>
+                    <div
+                      class="element-check {% if sec.has_structure_description %}check-ok{% else %}check-fail{% endif %}"
+                    >
+                      <span class="check-icon"
+                        >{% if sec.has_structure_description %}+{% else %}-{%
+                        endif %}</span
+                      >
+                      <span>Описание структуры работы</span>
+                    </div>
+                  </div>
+                </div>
+                {% endif %} {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендации:</div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Основная часть -->
+              {% if structure.main_body %} {% set sec = structure.main_body %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">4</span>
+                  <span class="ref-type warning">основная часть</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Основная часть не структурирована{%
+                    else %}Найдено разделов: {{ sec.sections_count|default(0)
+                    }}{% endif %}
+                  </div>
+                </div>
+                {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендации:</div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Заключение -->
+              {% if structure.conclusion %} {% set sec = structure.conclusion %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">5</span>
+                  <span class="ref-type warning">заключение</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Заключение не найдено{% elif
+                    sec.errors %}Требует доработки{% else %}Оформлено
+                    корректно{% endif %}
+                  </div>
+                </div>
+                {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендации:</div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+
+              <!-- Список литературы -->
+              {% if structure.references %} {% set sec = structure.references %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning">6</span>
+                  <span class="ref-type warning">список литературы</span>
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Статус:</div>
+                  <div class="block-text">
+                    {% if not sec.present %}Список литературы не найден{% else
+                    %}Найдено источников: {{ sec.count|default(0) }}{% endif %}
+                  </div>
+                </div>
+                {% if sec.errors %}
+                <div class="errors-list">
+                  <div class="block-label warning">Замечания:</div>
+                  <ul>
+                    {% for e in sec.errors %}
+                    <li>{{ e }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endif %} {% if sec.recommendations %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендации:</div>
+                  <div class="block-text">
+                    <ul>
+                      {% for r in sec.recommendations %}
+                      <li>{{ r }}</li>
+                      {% endfor %}
+                    </ul>
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- ===== Корректные разделы ===== -->
+            {% set ok_list = [] %} {% if structure.title_page and
+            structure.title_page.present and not structure.title_page.errors
+            %}{% set _ = ok_list.append('Титульный лист') %}{% endif %} {% if
+            structure.table_of_contents and structure.table_of_contents.present
+            and not structure.table_of_contents.errors %}{% set _ =
+            ok_list.append('Содержание') %}{% endif %} {% if
+            structure.introduction and structure.introduction.present and not
+            structure.introduction.errors %}{% set _ =
+            ok_list.append('Введение') %}{% endif %} {% if structure.main_body
+            and structure.main_body.present and not structure.main_body.errors
+            %}{% set _ = ok_list.append('Основная часть') %}{% endif %} {% if
+            structure.conclusion and structure.conclusion.present and not
+            structure.conclusion.errors %}{% set _ =
+            ok_list.append('Заключение') %}{% endif %} {% if
+            structure.references and structure.references.present and not
+            structure.references.errors %}{% set _ = ok_list.append('Список
+            литературы') %}{% endif %} {% if ok_list|length > 0 %}
+            <div class="references-section">
+              <div class="section-header section-success">
+                <h3>Корректно оформленные разделы</h3>
+                <span class="section-count">{{ ok_list|length }}</span>
+              </div>
+              {% for name in ok_list %}
+              <div class="correct-ref-card">
+                <div class="ref-content">
+                  <span class="ref-number success">{{ loop.index }}</span>
+                  <div class="ref-body">
+                    <span class="ref-text">{{ name }}</span>
+                    <span class="ref-type success">соответствует ГОСТ</span>
+                  </div>
+                  <span class="correct-icon">OK</span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %} {% else %}
+
+            <!-- ========== ГОСТ 7.0.5-2008 ========== -->
+
+            <div class="stats-banner">
+              <div class="stat-card stat-total">
+                <span class="stat-number"
+                  >{{ result.total_found|default(0) }}</span
+                >
+                <span class="stat-label">Всего ссылок</span>
+              </div>
+              <div class="stat-card stat-correct">
+                <span class="stat-number"
+                  >{{ result.correct_count|default(0) }}</span
+                >
+                <span class="stat-label">Корректных</span>
+              </div>
+              <div class="stat-card stat-incorrect">
+                <span class="stat-number"
+                  >{{ result.incorrect_count|default(0) }}</span
+                >
+                <span class="stat-label">Требуют правки</span>
+              </div>
+            </div>
+
+            {% if result.total_found == 0 %}
+            <div class="empty-state">
+              <h3>Список литературы не найден</h3>
+              <p>
+                В загруженном документе не обнаружены библиографические ссылки.
+              </p>
+            </div>
+            {% else %} {% if result.incorrect_references %}
+            <div class="references-section">
+              <div class="section-header section-warning">
+                <h3>Ссылки, требующие исправления</h3>
+                <span class="section-count">{{ result.incorrect_count }}</span>
+              </div>
+
+              {% for ref in result.incorrect_references %}
+              <div class="incorrect-ref-card">
+                <div class="ref-header">
+                  <span class="ref-number warning"
+                    >{{ ref.number if ref.number else loop.index }}</span
+                  >
+                  <span class="ref-type warning"
+                    >{{ ref.type if ref.type else 'источник' }}</span
+                  >
+                </div>
+                <div class="original-block">
+                  <div class="block-label">Исходный текст:</div>
+                  <div class="block-text">{{ ref.original }}</div>
+                </div>
+                {% if ref.errors %}
+                <div class="errors-block">
+                  <div class="block-label warning">Что нужно исправить:</div>
+                  {% for error in ref.errors %}
+                  <div class="error-item">
+                    {% if error is mapping %}
+                    <div class="error-desc">{{ error.description }}</div>
+                    {% if error.wrong_fragment or error.should_be %}
+                    <div class="error-detail">
+                      {% if error.wrong_fragment %}<span class="wrong-text"
+                        >{{ error.wrong_fragment }}</span
+                      >{% endif %} {% if error.should_be %}<span
+                        class="right-text"
+                        >{{ error.should_be }}</span
+                      >{% endif %}
+                    </div>
+                    {% endif %} {% else %}
+                    <div class="error-desc">{{ error }}</div>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+                <div class="corrected-block">
+                  <div class="block-label success">Рекомендуемый вариант:</div>
+                  <div class="block-text">
+                    {{ ref.corrected if ref.corrected else ref.formatted }}
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %} {% if result.correct_references %}
+            <div class="references-section">
+              <div class="section-header section-success">
+                <h3>Корректно оформленные ссылки</h3>
+                <span class="section-count">{{ result.correct_count }}</span>
+              </div>
+
+              {% for ref in result.correct_references %}
+              <div class="correct-ref-card">
+                <div class="ref-content">
+                  <span class="ref-number success"
+                    >{{ ref.number if ref.number else loop.index }}</span
+                  >
+                  <div class="ref-body">
+                    <span class="ref-text"
+                      >{{ ref.text if ref.text else ref.original }}</span
+                    >
+                    {% if ref.type %}<span class="ref-type success"
+                      >{{ ref.type }}</span
+                    >{% endif %}
+                  </div>
+                  <span class="correct-icon">OK</span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            {% endif %} {% endif %} {% endif %}
+
+            <!-- Общие рекомендации -->
+            {% if result.general_recommendations %}
+            <div class="recommendations-section">
+              <h4>Общие рекомендации</h4>
+              <ul>
+                {% for rec in result.general_recommendations %}
+                <li>{{ rec }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+            {% endif %} {% elif result and not result.get('success') %}
+            <div class="error-result">
+              <h4>Не удалось обработать документ</h4>
+              <p>{{ result.error }}</p>
+            </div>
+
+            {% else %}
+            <div class="empty-state">
+              <h3>Результаты отсутствуют</h3>
+              <p>Файл ещё не был обработан.</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Боковая панель -->
+          <div class="work-sidebar">
+            <div class="sidebar-section">
+              <h3>Действия</h3>
+              <button
+                onclick="window.location.href='{{ url_for('check_file') }}'"
+                class="sidebar-btn primary"
+              >
+                Загрузить новый файл
+              </button>
+              <button
+                onclick="window.location.href='{{ return_route }}'"
+                class="sidebar-btn secondary"
+              >
+                В личный кабинет
+              </button>
+              <button onclick="window.print()" class="sidebar-btn tertiary">
+                Печать отчёта
+              </button>
+            </div>
+
+            {% if result and result.get('success') %}
+            <div class="sidebar-section">
+              <h3>Сводка</h3>
+              <div class="summary-stats">
+                {% if result.get('overall_compliance') %}
+                <div class="summary-row">
+                  <span>Соответствие ГОСТ:</span>
+                  <strong
+                    class="{% if result.overall_compliance.score >= 80 %}text-success{% elif result.overall_compliance.score >= 50 %}text-warning{% else %}text-danger{% endif %}"
+                    >{{ result.overall_compliance.score|default(0) }}%</strong
+                  >
+                </div>
+                <div class="summary-row">
+                  <span>Уровень:</span>
+                  <strong
+                    >{{ result.overall_compliance.level|default('—') }}</strong
+                  >
+                </div>
+                {% else %}
+                <div class="summary-row">
+                  <span>Всего:</span>
+                  <strong>{{ result.total_found|default(0) }}</strong>
+                </div>
+                <div class="summary-row">
+                  <span>Корректных:</span>
+                  <strong class="text-success"
+                    >{{ result.correct_count|default(0) }}</strong
+                  >
+                </div>
+                <div class="summary-row">
+                  <span>С ошибками:</span>
+                  <strong class="text-warning"
+                    >{{ result.incorrect_count|default(0) }}</strong
+                  >
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Настройки</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  </head>
+  <body>
+    <nav class="top-nav">
+      <div class="nav-left">
+        <a href="{{ return_route }}" class="menu-toggle" style="text-decoration: none;">←</a>
+        <span class="logo">WorkWise</span>
+      </div>
+      <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
+    </nav>
+
+    <main class="settings-page-content">
+      <div class="settings-card">
+        <h1>Настройки</h1>
+
+        <div class="setting-item">
+          <span class="setting-label">Тема оформления</span>
+          <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="themeToggle">
+              <input type="checkbox" id="themeToggle" />
+              <span class="slider round"></span>
+            </label>
+            <span class="theme-label" id="themeLabel">Темная</span>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <span class="setting-label">Язык интерфейса</span>
+          <select class="language-select" id="languageSelect">
+            <option value="ru" selected>Русский</option>
+            <option value="en">English</option>
+          </select>
+        </div>
+
+        <button class="save-settings-btn">Сохранить настройки</button>
+        <p class="hint-text">* Тема и язык будут сохранены для вашего профиля</p>
+      </div>
+    </main>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const themeToggle = document.getElementById("themeToggle");
+        const themeLabel = document.getElementById("themeLabel");
+        const body = document.body;
+        const saveSettingsBtn = document.querySelector(".save-settings-btn");
+        const languageSelect = document.getElementById("languageSelect");
+
+        // --- 1. Загрузка сохраненной темы (по умолчанию - темная) ---
+        //const savedTheme = localStorage.getItem("theme");
+        const rootElement = document.documentElement;
+        function applyAndSetTheme(isLight) {
+          if (isLight) {
+            rootElement.classList.add("light-theme");
+            themeToggle.checked = true;
+            themeLabel.textContent = "Светлая";
+          } else {
+            rootElement.classList.remove("light-theme");
+            themeToggle.checked = false;
+            themeLabel.textContent = "Темная";
+          }
+        }
+
+        const savedLanguage = localStorage.getItem("language");
+        if (savedLanguage) {
+          languageSelect.value = savedLanguage;
+        }
+
+        // --- 2. Обработчик переключения темы ---
+        themeToggle.addEventListener("change", function () {
+          if (this.checked) {
+            body.classList.add("light-theme");
+            themeLabel.textContent = "Светлая";
+          } else {
+            body.classList.remove("light-theme");
+            themeLabel.textContent = "Темная";
+          }
+        });
+
+        // --- 3. Обработчик сохранения настроек ---
+        saveSettingsBtn.addEventListener("click", function () {
+          const currentTheme = themeToggle.checked ? "light" : "dark";
+          const currentLanguage = languageSelect.value;
+
+          localStorage.setItem("theme", currentTheme);
+          localStorage.setItem("language", currentLanguage);
+          
+          alert("Настройки сохранены!"); 
+        });
+      });
+    </script>
+  </body>
+</html>
