@@ -308,9 +308,10 @@
         fetch(`/api/document/${documentId}/status`)
           .then(response => response.json())
           .then(data => {
+            const stats = data.statistics;
+            
             // Обновляем прогресс-бар (только если не идет финальная проверка ГОСТ)
             if (!(data.all_pages_processed && !data.gost_check_completed)) {
-              const stats = data.statistics;
               const total = stats.total;
               const completed = stats.completed;
               const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -320,15 +321,17 @@
               progressFill.textContent = progress + '%';
             }
             
-            // Обновляем информацию о статусе
-            const statusInfo = document.getElementById('statusInfo');
-            statusInfo.innerHTML = `
-              Всего страниц: ${stats.total} | 
-              В очереди: ${stats.queued} | 
-              Обрабатывается: ${stats.processing} | 
-              Завершено: ${stats.completed} | 
-              Ошибки: ${stats.errors}
-            `;
+            // Обновляем информацию о статусе (только если не идет финальная проверка ГОСТ)
+            if (!(data.all_pages_processed && !data.gost_check_completed)) {
+              const statusInfo = document.getElementById('statusInfo');
+              statusInfo.innerHTML = `
+                Всего страниц: ${stats.total} | 
+                В очереди: ${stats.queued} | 
+                Обрабатывается: ${stats.processing} | 
+                Завершено: ${stats.completed} | 
+                Ошибки: ${stats.errors}
+              `;
+            }
             
             // Обновляем список статусов страниц
             const pagesStatusList = document.getElementById('pagesStatusList');
