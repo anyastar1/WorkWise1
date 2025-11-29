@@ -13,14 +13,15 @@ from database import Page, Block, TextElement, PageStatus, Document, GOSTReport,
 
 
 # Промпт для анализа страницы (строго формализованный)
+# Используем двойные фигурные скобки {{ }} для экранирования в .format()
 PAGE_ANALYSIS_PROMPT = """Ты - система обработки документов. Проанализируй предоставленное изображение страницы документа и выдели все текстовые блоки и их метаданные.
 
 ВЕРНИ ответ **строго** в следующем формате XML. Не добавляй пояснений, комментариев и лишнего текста.
 
 <page number="{номер_страницы}">
-  <block short-description="{краткое_описание_блока}" position-x="{X_левого_верхнего_угла}" position-y="{Y_левого_верхнего_угла}" width="{ширина_блока}" height="{высота_блока}">
-    <text font-family="{название_шрифта}" font-size="{размер_шрифта}" color="{цвет_в_HEX}" position-x="{X_текста}" position-y="{Y_текста}" width="{ширина_текстовой_области}" height="{высота_текстовой_области}">
-      {извлеченный_текст}
+  <block short-description="{{краткое_описание_блока}}" position-x="{{X_левого_верхнего_угла}}" position-y="{{Y_левого_верхнего_угла}}" width="{{ширина_блока}}" height="{{высота_блока}}">
+    <text font-family="{{название_шрифта}}" font-size="{{размер_шрифта}}" color="{{цвет_в_HEX}}" position-x="{{X_текста}}" position-y="{{Y_текста}}" width="{{ширина_текстовой_области}}" height="{{высота_текстовой_области}}">
+      {{извлеченный_текст}}
     </text>
     <!-- Может быть несколько тегов <text> внутри одного блока, если шрифты различаются -->
   </block>
@@ -28,6 +29,7 @@ PAGE_ANALYSIS_PROMPT = """Ты - система обработки докуме�
 </page>"""
 
 # Промпт для проверки ГОСТ
+# Используем двойные фигурные скобки {{ }} для экранирования в .format()
 GOST_CHECK_PROMPT = """Ты - эксперт по проверке документов на соответствие ГОСТ. Тебе будет предоставлен текст документа, извлеченный из PDF. Текст разметлен по блокам и страницам.
 
 ПРОАНАЛИЗИРУЙ предоставленный текст и ВЕРНИ ответ в виде структурированного отчета.
@@ -104,16 +106,22 @@ class PageProcessor:
         try:
             page = db.get(Page, page_id)
             if not page:
+                print(f"[ERROR] Страница {page_id} не найдена в БД")
                 return
             
             # Обновляем статус на "обрабатывается"
             page.status = PageStatus.PROCESSING.value
             db.commit()
+            print(f"[INFO] Начало обработки страницы {page_number} (ID: {page_id})")
             
             # Формируем промпт с номером страницы
             user_prompt = PAGE_ANALYSIS_PROMPT.format(номер_страницы=page_number)
+            print(f"[DEBUG] Промпт для страницы {page_number}:")
+            print(f"[DEBUG] {user_prompt[:200]}...")
+            print(f"[DEBUG] Путь к изображению: {image_path}")
             
             # Отправляем запрос к Ollama
+            print(f"[INFO] Отправка запроса к Ollama для страницы {page_number}...")
             response = self.ollama_client.generate(
                 user_prompt=user_prompt,
                 system_prompt="Ты - система обработки документов. Твоя задача - точно извлечь структурированные данные из изображения.",
@@ -123,16 +131,38 @@ class PageProcessor:
                 max_retries=3
             )
             
+            print(f"[INFO] Получен ответ от Ollama для страницы {page_number}")
+            
             # Извлекаем текст ответа
-            response_text = response.get('message', {}).get('content', '') if 'message' in response else response.get('response', '')
+            # Ollama API возвращает ответ в формате: {"message": {"content": "...", "role": "assistant"}, ...}
+            response_text = ""
+            if 'message' in response and isinstance(response['message'], dict):
+                response_text = response['message'].get('content', '')
+            elif 'response' in response:
+                response_text = response['response']
+            elif isinstance(response, str):
+                response_text = response
+            
+            if not response_text:
+                print(f"[WARNING] Пустой ответ от Ollama для страницы {page_number}")
+                print(f"[DEBUG] Полный ответ (тип: {type(response)}): {response}")
+                print(f"[DEBUG] Ключи в ответе: {list(response.keys()) if isinstance(response, dict) else 'N/A'}")
+                raise ValueError("Пустой ответ от Ollama")
+            
+            print(f"[DEBUG] Длина ответа: {len(response_text)} символов")
+            print(f"[DEBUG] Первые 500 символов ответа: {response_text[:500]}")
             
             # Валидируем XML
+            print(f"[INFO] Валидация XML для страницы {page_number}...")
             is_valid, error_msg = validate_xml_structure(response_text)
             if not is_valid:
+                print(f"[ERROR] Невалидный XML для страницы {page_number}: {error_msg}")
                 raise XMLParseError(f"Невалидный XML: {error_msg}")
             
+            print(f"[INFO] XML валиден, начинаем парсинг...")
             # Парсим XML
             blocks_data = parse_page_xml(response_text, page_number)
+            print(f"[INFO] Распарсено блоков: {len(blocks_data)}")
             
             # Сохраняем данные в БД
             for block_data in blocks_data:
@@ -166,21 +196,25 @@ class PageProcessor:
             page.status = PageStatus.COMPLETED.value
             page.processed_at = datetime.utcnow()
             db.commit()
+            print(f"[SUCCESS] Страница {page_number} успешно обработана")
             
             # Проверяем, все ли страницы обработаны
             self._check_all_pages_processed(page.document_id, db)
             
         except Exception as e:
             # Обновляем статус на "ошибка"
+            error_msg = str(e)
+            print(f"[ERROR] Ошибка обработки страницы {page_id} (страница {page_number}): {error_msg}")
+            import traceback
+            print(f"[ERROR] Трассировка: {traceback.format_exc()}")
             try:
                 page = db.get(Page, page_id)
                 if page:
                     page.status = PageStatus.ERROR.value
-                    page.processing_error = str(e)
+                    page.processing_error = error_msg
                     db.commit()
-            except:
-                pass
-            print(f"Ошибка обработки страницы {page_id}: {e}")
+            except Exception as db_error:
+                print(f"[ERROR] Ошибка при сохранении статуса ошибки: {db_error}")
         finally:
             db.close()
     

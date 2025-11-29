@@ -73,16 +73,7 @@ def upload_document():
         # Обработка документа
         document = process_document(file, user.id, operation_type, db)
         
-        # Запускаем обработку страниц через Ollama
-        processor = get_page_processor()
-        pages = sorted(document.pages, key=lambda p: p.page_number)
-        
-        for page in pages:
-            image_path = os.path.join("uploads", page.image_path)
-            if os.path.exists(image_path):
-                processor.add_page_task(page.id, image_path, page.page_number)
-        
-        flash("Документ успешно загружен. Обработка страниц началась.", "success")
+        flash("Документ успешно загружен", "success")
         return redirect(url_for("main.view_document", document_id=document.id))
     
     except Exception as e:
@@ -109,8 +100,23 @@ def view_document(document_id):
         flash("У вас нет доступа к этому документу", "error")
         return redirect(url_for("main.welcome"))
     
-    # Получаем страницы, отсортированные по номеру
+    # Запускаем обработку страниц через Ollama при переходе на страницу документа
+    # Проверяем, есть ли страницы в статусе "queued" (еще не обрабатывались)
     pages = sorted(document.pages, key=lambda p: p.page_number)
+    queued_pages = [p for p in pages if p.status == PageStatus.QUEUED.value]
+    
+    if queued_pages:
+        # Запускаем обработку только для страниц в очереди
+        processor = get_page_processor()
+        print(f"[DEBUG] Запуск обработки {len(queued_pages)} страниц для документа {document_id}")
+        
+        for page in queued_pages:
+            image_path = os.path.join("uploads", page.image_path)
+            if os.path.exists(image_path):
+                print(f"[DEBUG] Добавление страницы {page.page_number} в очередь обработки")
+                processor.add_page_task(page.id, image_path, page.page_number)
+            else:
+                print(f"[WARNING] Изображение страницы {page.page_number} не найдено: {image_path}")
     
     return render_template("document_view.html", document=document, pages=pages, user=user)
 
