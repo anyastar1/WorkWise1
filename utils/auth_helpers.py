@@ -3,7 +3,7 @@
 """
 from functools import wraps
 from flask import session, redirect, url_for, g
-from database import User, GOST
+from database import User
 
 
 def get_current_user(db_session):
@@ -18,7 +18,7 @@ def get_current_user(db_session):
     """
     user_id = session.get("user_id")
     if user_id:
-        return db_session.query(User).get(user_id)
+        return db_session.get(User, user_id)
     return None
 
 
@@ -34,61 +34,6 @@ def require_login(f):
             return redirect(url_for("auth.login"))
         return f(*args, **kwargs)
     return decorated_function
-
-
-def get_return_route(user):
-    """
-    Получает маршрут возврата в зависимости от типа клиента.
-    
-    Args:
-        user: Объект User
-        
-    Returns:
-        str: URL маршрута возврата
-    """
-    if user.client_type == "company":
-        return url_for("main.lk_company")
-    else:
-        return url_for("main.lk_private")
-
-
-def get_available_gosts(db_session, user):
-    """
-    Получает список доступных ГОСТов для пользователя.
-    
-    Args:
-        db_session: Сессия базы данных
-        user: Объект User
-        
-    Returns:
-        list: Список объектов GOST
-    """
-    if user.client_type == "company":
-        return db_session.query(GOST).all()
-    else:
-        return db_session.query(GOST).filter_by(client_type_for="all").all()
-
-
-def check_upload_access(upload, user):
-    """
-    Проверяет права доступа пользователя к загрузке.
-    
-    Args:
-        upload: Объект UserUpload
-        user: Объект User
-        
-    Returns:
-        bool: True если доступ разрешен, False иначе
-    """
-    # Пользователь может видеть свои загрузки
-    if upload.user_id == user.id:
-        return True
-    
-    # Компания может видеть загрузки всех своих пользователей
-    if user.client_type == "company" and upload.user.company_id == user.company_id:
-        return True
-    
-    return False
 
 
 def validate_user_exists(db_session, login=None, email=None):
