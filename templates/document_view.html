@@ -138,6 +138,90 @@
         color: #ffd700;
       }
       
+      /* Стили для индикации финальной проверки ГОСТ */
+      .gost-check-indicator {
+        margin-top: 20px;
+        padding: 20px;
+        background: rgba(255, 152, 0, 0.2);
+        border: 2px solid #ff9800;
+        border-radius: 10px;
+        text-align: center;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+        }
+        50% {
+          opacity: 0.9;
+          box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+        }
+      }
+      
+      .gost-check-indicator h3 {
+        color: #ffffff;
+        margin: 0 0 15px 0;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+      
+      .gost-check-indicator p {
+        color: #f0f0f0;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      
+      .spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        border-top-color: #ffffff;
+        animation: spin 1s ease-in-out infinite;
+      }
+      
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      
+      .gost-check-steps {
+        margin-top: 15px;
+        text-align: left;
+        display: inline-block;
+      }
+      
+      .gost-check-steps .step {
+        color: #f0f0f0;
+        margin: 8px 0;
+        padding-left: 25px;
+        position: relative;
+        font-size: 13px;
+      }
+      
+      .gost-check-steps .step::before {
+        content: "→";
+        position: absolute;
+        left: 0;
+        color: #ff9800;
+        font-weight: bold;
+      }
+      
+      .gost-check-steps .step.active {
+        color: #ffffff;
+        font-weight: 600;
+      }
+      
+      .gost-check-steps .step.active::before {
+        content: "⏳";
+        animation: spin 1s linear infinite;
+      }
+      
       @media (max-width: 768px) {
         .document-container {
           margin: 10px;
@@ -182,15 +266,14 @@
           <div id="statusInfo" style="color: white; margin-top: 15px; font-size: 14px;">
             Загрузка статуса...
           </div>
+          <!-- Индикация финальной проверки ГОСТ -->
+          <div id="gostCheckIndicator" style="display: none;"></div>
+          
           {% if document.gost_check_completed %}
             <div id="reportLinkContainer" style="margin-top: 20px;">
               <a href="{{ url_for('main.view_gost_report', document_id=document.id) }}" class="back-button" style="background: #4caf50;">
                 📄 Просмотреть отчет о соответствии ГОСТу
               </a>
-            </div>
-          {% elif document.all_pages_processed %}
-            <div style="margin-top: 20px; color: white;">
-              Все страницы обработаны. Выполняется проверка на соответствие ГОСТу...
             </div>
           {% endif %}
         </div>
@@ -225,15 +308,17 @@
         fetch(`/api/document/${documentId}/status`)
           .then(response => response.json())
           .then(data => {
-            // Обновляем прогресс-бар
-            const stats = data.statistics;
-            const total = stats.total;
-            const completed = stats.completed;
-            const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
-            
-            const progressFill = document.getElementById('progressFill');
-            progressFill.style.width = progress + '%';
-            progressFill.textContent = progress + '%';
+            // Обновляем прогресс-бар (только если не идет финальная проверка ГОСТ)
+            if (!(data.all_pages_processed && !data.gost_check_completed)) {
+              const stats = data.statistics;
+              const total = stats.total;
+              const completed = stats.completed;
+              const progress = total > 0 ? Math.round((completed / total) * 100) : 0;
+              
+              const progressFill = document.getElementById('progressFill');
+              progressFill.style.width = progress + '%';
+              progressFill.textContent = progress + '%';
+            }
             
             // Обновляем информацию о статусе
             const statusInfo = document.getElementById('statusInfo');
@@ -304,9 +389,47 @@
               pagesStatusList.appendChild(pageItem);
             });
             
-            // Если все страницы обработаны и проверка ГОСТ завершена, останавливаем обновление
-            if (data.all_pages_processed && data.gost_check_completed) {
+            // Проверяем состояние финальной проверки ГОСТ
+            const gostCheckIndicator = document.getElementById('gostCheckIndicator');
+            
+            if (data.all_pages_processed && !data.gost_check_completed) {
+              // Показываем индикацию финальной проверки ГОСТ
+              if (gostCheckIndicator.style.display === 'none' || !gostCheckIndicator.innerHTML) {
+                gostCheckIndicator.innerHTML = `
+                  <div class="gost-check-indicator">
+                    <h3>
+                      <span class="spinner"></span>
+                      Выполняется финальная проверка документа на соответствие ГОСТ
+                    </h3>
+                    <p><strong>Пожалуйста, подождите...</strong></p>
+                    <p>Система анализирует извлеченные данные и формирует отчет о соответствии требованиям ГОСТ.</p>
+                    <div class="gost-check-steps">
+                      <div class="step active">Анализ структуры документа</div>
+                      <div class="step">Проверка соответствия требованиям ГОСТ</div>
+                      <div class="step">Формирование отчета с рекомендациями</div>
+                    </div>
+                  </div>
+                `;
+                gostCheckIndicator.style.display = 'block';
+              }
+              
+              // Обновляем прогресс-бар на 100% для страниц
+              const progressFill = document.getElementById('progressFill');
+              progressFill.style.width = '100%';
+              progressFill.textContent = '100%';
+              progressFill.style.background = '#ff9800'; // Оранжевый цвет для финальной проверки
+              
+              // Обновляем статус
+              const statusInfo = document.getElementById('statusInfo');
+              statusInfo.innerHTML = `
+                <strong style="color: #ff9800;">✓ Все страницы обработаны (${stats.completed}/${stats.total}). Выполняется финальная проверка ГОСТ...</strong>
+              `;
+            } else if (data.all_pages_processed && data.gost_check_completed) {
+              // Проверка ГОСТ завершена
               clearInterval(statusCheckInterval);
+              
+              // Скрываем индикатор финальной проверки
+              gostCheckIndicator.style.display = 'none';
               
               // Обновляем DOM для показа ссылки на отчет без перезагрузки страницы
               const progressSection = document.getElementById('progressSection');
@@ -315,6 +438,7 @@
               if (!reportLink) {
                 // Создаем ссылку на отчет, если её еще нет
                 const reportDiv = document.createElement('div');
+                reportDiv.id = 'reportLinkContainer';
                 reportDiv.style.marginTop = '20px';
                 reportDiv.innerHTML = `
                   <a href="/document/${documentId}/report" class="back-button" style="background: #4caf50;">
@@ -326,6 +450,10 @@
                 // Показываем существующую ссылку, если она была скрыта
                 reportLink.style.display = 'inline-block';
               }
+              
+              // Обновляем прогресс-бар на зеленый
+              const progressFill = document.getElementById('progressFill');
+              progressFill.style.background = '#4caf50';
               
               // Обновляем статус на "Завершено"
               const statusInfo = document.getElementById('statusInfo');
