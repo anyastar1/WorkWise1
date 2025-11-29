@@ -40,5 +40,12 @@ if __name__ == "__main__":
     print("🚀 Запуск WorkWise Application")
     print("=" * 60)
     initialize_database()
+    
+    # Инициализируем процессор страниц
+    print("Инициализация процессора страниц...")
+    from utils.page_processor import get_page_processor
+    processor = get_page_processor()
+    print("Процессор страниц запущен")
+    
     print("=" * 60 + "\n")
     app.run(debug=True, port=5001)

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Отчет о соответствии ГОСТу</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .report-container {
+        max-width: 1000px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      
+      .report-header {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      
+      .report-title {
+        color: var(--color-text-main, #b6d4cf);
+        margin-bottom: 10px;
+      }
+      
+      .verdict-badge {
+        display: inline-block;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+      
+      .verdict-yes {
+        background: #4caf50;
+        color: white;
+      }
+      
+      .verdict-no {
+        background: #f44336;
+        color: white;
+      }
+      
+      .verdict-partial {
+        background: #ff9800;
+        color: white;
+      }
+      
+      .report-content {
+        background: var(--color-box-background, #339989);
+        padding: 30px;
+        border-radius: 10px;
+        color: white;
+        line-height: 1.6;
+      }
+      
+      .report-content h2 {
+        color: white;
+        margin-top: 20px;
+        margin-bottom: 10px;
+      }
+      
+      .report-content h3 {
+        color: white;
+        margin-top: 15px;
+        margin-bottom: 8px;
+      }
+      
+      .report-content ul, .report-content ol {
+        margin-left: 20px;
+        margin-bottom: 15px;
+      }
+      
+      .report-content strong {
+        font-weight: 600;
+      }
+      
+      .back-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--color-accent-primary, #339989);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: background 0.3s;
+      }
+      
+      .back-button:hover {
+        background: #2a7a6e;
+      }
+      
+      @media (max-width: 768px) {
+        .report-container {
+          margin: 10px;
+          padding: 10px;
+        }
+        
+        .report-content {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="reportPage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
+      </nav>
+
+      <main class="report-container">
+        <a href="{{ url_for('main.view_document', document_id=document.id) }}" class="back-button">← Назад к документу</a>
+
+        <div class="report-header">
+          <h1 class="report-title">Отчет о соответствии ГОСТу</h1>
+          <div style="color: var(--color-text-main, #b6d4cf); font-size: 14px; opacity: 0.8;">
+            Документ {{ document.id }} | {{ document.created_at.strftime('%d.%m.%Y %H:%M') }}
+          </div>
+          <div class="verdict-badge verdict-{{ report.verdict }}">
+            Вердикт: {{ 'Соответствует' if report.verdict == 'да' else ('Не соответствует' if report.verdict == 'нет' else 'Частично соответствует') }}
+          </div>
+        </div>
+
+        <div class="report-content">
+          {{ report.report_text | safe }}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="{{ url_for('main.view_document', document_id=document.id) }}" class="back-button">← Вернуться к документу</a>
+          <a href="{{ url_for('main.welcome') }}" class="back-button" style="margin-left: 10px;">← На главную</a>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

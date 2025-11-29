@@ -10,7 +10,11 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     DateTime,
+    Text,
+    Float,
+    Enum,
 )
+import enum
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
@@ -80,6 +84,8 @@ class Document(Base):
     file_type = Column(String(10), nullable=False)  # 'PDF' или 'DOCX'
     operation_type = Column(String(100), nullable=False)  # Тип операции
     hash = Column(String(64), nullable=False, unique=True)  # SHA-256 хеш
+    all_pages_processed = Column(Boolean, default=False, nullable=False)
+    gost_check_completed = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     
     user = relationship("User", back_populates="documents")
@@ -89,6 +95,14 @@ class Document(Base):
         return f"<Document(id={self.id}, file_type='{self.file_type}')>"
 
 
+class PageStatus(enum.Enum):
+    """Статусы обработки страницы"""
+    QUEUED = "queued"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    ERROR = "error"
+
+
 class Page(Base):
     """Модель страницы документа"""
     __tablename__ = "pages"
@@ -96,12 +110,71 @@ class Page(Base):
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
     page_number = Column(Integer, nullable=False)
     image_path = Column(String(500), nullable=False)
+    status = Column(String(20), default=PageStatus.QUEUED.value, nullable=False)
+    processing_error = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    processed_at = Column(DateTime, nullable=True)
     
     document = relationship("Document", back_populates="pages")
+    blocks = relationship("Block", back_populates="page", cascade="all, delete-orphan")
     
     def __repr__(self):
-        return f"<Page(document_id={self.document_id}, page_number={self.page_number})>"
+        return f"<Page(document_id={self.document_id}, page_number={self.page_number}, status={self.status})>"
+
+
+class Block(Base):
+    """Модель блока на странице"""
+    __tablename__ = "blocks"
+    id = Column(Integer, primary_key=True)
+    page_id = Column(Integer, ForeignKey("pages.id"), nullable=False)
+    short_description = Column(String(200), nullable=False)  # заголовок, основной текст и т.д.
+    position_x = Column(Float, nullable=False)
+    position_y = Column(Float, nullable=False)
+    width = Column(Float, nullable=False)
+    height = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    page = relationship("Page", back_populates="blocks")
+    text_elements = relationship("TextElement", back_populates="block", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Block(page_id={self.page_id}, description='{self.short_description}')>"
+
+
+class TextElement(Base):
+    """Модель текстового элемента в блоке"""
+    __tablename__ = "text_elements"
+    id = Column(Integer, primary_key=True)
+    block_id = Column(Integer, ForeignKey("blocks.id"), nullable=False)
+    text = Column(Text, nullable=False)
+    font_family = Column(String(100), nullable=True)
+    font_size = Column(Float, nullable=True)
+    color = Column(String(10), nullable=True)  # HEX цвет
+    position_x = Column(Float, nullable=False)
+    position_y = Column(Float, nullable=False)
+    width = Column(Float, nullable=False)
+    height = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    block = relationship("Block", back_populates="text_elements")
+    
+    def __repr__(self):
+        return f"<TextElement(block_id={self.block_id}, text='{self.text[:50]}...')>"
+
+
+class GOSTReport(Base):
+    """Модель отчета о соответствии ГОСТу"""
+    __tablename__ = "gost_reports"
+    id = Column(Integer, primary_key=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False, unique=True)
+    verdict = Column(String(20), nullable=False)  # да/нет/частично
+    report_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    document = relationship("Document", backref="gost_report")
+    
+    def __repr__(self):
+        return f"<GOSTReport(document_id={self.document_id}, verdict='{self.verdict}')>"
 
 
 # Управление сессиями базы данных

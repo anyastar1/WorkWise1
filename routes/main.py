@@ -2,13 +2,14 @@
 Основные маршруты приложения
 """
 
-from flask import Blueprint, redirect, url_for, render_template, request, flash, g, send_from_directory
+from flask import Blueprint, redirect, url_for, render_template, request, flash, g, send_from_directory, jsonify
 from werkzeug.utils import secure_filename
 import os
 from pathlib import Path
 from utils.auth_helpers import require_login, get_current_user
-from database import Document, Page
+from database import Document, Page, PageStatus
 from utils.document_processor import process_document
+from utils.page_processor import get_page_processor
 
 bp = Blueprint("main", __name__)
 
@@ -72,7 +73,16 @@ def upload_document():
         # Обработка документа
         document = process_document(file, user.id, operation_type, db)
         
-        flash("Документ успешно загружен и обработан", "success")
+        # Запускаем обработку страниц через Ollama
+        processor = get_page_processor()
+        pages = sorted(document.pages, key=lambda p: p.page_number)
+        
+        for page in pages:
+            image_path = os.path.join("uploads", page.image_path)
+            if os.path.exists(image_path):
+                processor.add_page_task(page.id, image_path, page.page_number)
+        
+        flash("Документ успешно загружен. Обработка страниц началась.", "success")
         return redirect(url_for("main.view_document", document_id=document.id))
     
     except Exception as e:
@@ -110,6 +120,83 @@ def view_document(document_id):
 def uploaded_file(filename):
     """Отдача загруженных файлов"""
     return send_from_directory(UPLOAD_FOLDER, filename)
+
+
+@bp.route("/api/document/<int:document_id>/status")
+@require_login
+def document_status(document_id):
+    """API для получения статуса обработки документа"""
+    user = get_current_user(g.db_session)
+    db = g.db_session
+    
+    document = db.get(Document, document_id)
+    
+    if not document:
+        return jsonify({"error": "Документ не найден"}), 404
+    
+    # Проверка прав доступа
+    if document.user_id != user.id:
+        return jsonify({"error": "Нет доступа"}), 403
+    
+    # Получаем статусы страниц
+    pages = sorted(document.pages, key=lambda p: p.page_number)
+    pages_status = [
+        {
+            "page_number": p.page_number,
+            "status": p.status,
+            "error": p.processing_error
+        }
+        for p in pages
+    ]
+    
+    # Подсчитываем статистику
+    total = len(pages)
+    queued = sum(1 for p in pages if p.status == PageStatus.QUEUED.value)
+    processing = sum(1 for p in pages if p.status == PageStatus.PROCESSING.value)
+    completed = sum(1 for p in pages if p.status == PageStatus.COMPLETED.value)
+    errors = sum(1 for p in pages if p.status == PageStatus.ERROR.value)
+    
+    return jsonify({
+        "document_id": document_id,
+        "all_pages_processed": document.all_pages_processed,
+        "gost_check_completed": document.gost_check_completed,
+        "pages": pages_status,
+        "statistics": {
+            "total": total,
+            "queued": queued,
+            "processing": processing,
+            "completed": completed,
+            "errors": errors
+        }
+    })
+
+
+@bp.route("/document/<int:document_id>/report")
+@require_login
+def view_gost_report(document_id):
+    """Страница отчета о соответствии ГОСТу"""
+    user = get_current_user(g.db_session)
+    db = g.db_session
+    
+    document = db.get(Document, document_id)
+    
+    if not document:
+        flash("Документ не найден", "error")
+        return redirect(url_for("main.welcome"))
+    
+    # Проверка прав доступа
+    if document.user_id != user.id:
+        flash("У вас нет доступа к этому документу", "error")
+        return redirect(url_for("main.welcome"))
+    
+    # Проверяем, есть ли отчет
+    if not document.gost_check_completed:
+        flash("Проверка на соответствие ГОСТу еще не завершена", "error")
+        return redirect(url_for("main.view_document", document_id=document_id))
+    
+    gost_report = document.gost_report
+    
+    return render_template("gost_report.html", document=document, report=gost_report, user=user)
 
 
 def allowed_file(filename):

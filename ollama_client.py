@@ -147,6 +147,9 @@ class OllamaClient:
         system_prompt: Optional[str] = None,
         image_paths: Optional[List[str]] = None,
         stream: bool = False,
+        model: Optional[str] = None,
+        timeout: int = 300,
+        max_retries: int = 3,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -206,24 +209,44 @@ class OllamaClient:
         
         messages.append(user_message)
         
+        # Используем указанную модель или модель по умолчанию
+        model_to_use = model or self.model
+        
         # Подготовка данных запроса для Ollama API
         payload = {
-            "model": self.model,
+            "model": model_to_use,
             "messages": messages,
             "stream": stream,
             **kwargs
         }
         
+        # Повторные попытки при ошибках
+        last_exception = None
+        for attempt in range(max_retries):
+            try:
+                # Отправка запроса
+                self.logger.info(f"Отправка запроса на {self.api_url} (попытка {attempt + 1}/{max_retries})")
+                self.logger.info(f"Используемая модель: {model_to_use}")
+                response = requests.post(
+                    self.api_url,
+                    json=payload,
+                    timeout=timeout,
+                    stream=stream
+                )
+                response.raise_for_status()
+                break  # Успешный запрос
+            except requests.exceptions.Timeout:
+                last_exception = f"Таймаут запроса (попытка {attempt + 1}/{max_retries})"
+                self.logger.warning(last_exception)
+                if attempt == max_retries - 1:
+                    raise requests.exceptions.Timeout(last_exception)
+            except requests.exceptions.RequestException as e:
+                last_exception = e
+                self.logger.warning(f"Ошибка запроса (попытка {attempt + 1}/{max_retries}): {e}")
+                if attempt == max_retries - 1:
+                    raise
+        
         try:
-            # Отправка запроса
-            self.logger.info(f"Отправка запроса на {self.api_url}")
-            response = requests.post(
-                self.api_url,
-                json=payload,
-                timeout=300,  # 5 минут таймаут
-                stream=stream
-            )
-            response.raise_for_status()
             
             if stream:
                 # Обработка потокового ответа
