@@ -276,3 +276,5 @@ site/
 # Кэш
 .cache/
 *.cache
+
+*.md

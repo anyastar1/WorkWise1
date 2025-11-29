@@ -40,7 +40,7 @@ except ImportError:
 def safe_remove_file(file_path):
     """
     Безопасно удаляет файл, игнорируя ошибки.
-    
+
     Args:
         file_path: Путь к файлу для удаления
     """
@@ -55,25 +55,26 @@ def safe_remove_file(file_path):
 def extract_text_from_pdf(file_path):
     """
     Извлекает текст из PDF файла.
-    
+
     Args:
         file_path: Путь к PDF файлу
-        
+
     Returns:
         str: Извлеченный текст или пустая строка
     """
     text_content = ""
-    
+
     if PYMUPDF_AVAILABLE:
         try:
             import fitz
+
             doc = fitz.open(file_path)
             text_content = "\n".join([page.get_text() for page in doc])
             doc.close()
             print(f"✅ Текст извлечён из PDF: {len(text_content)} символов")
         except Exception as e:
             print(f"⚠️ Ошибка чтения PDF: {e}")
-    
+
     return text_content
 
 
