@@ -562,6 +562,58 @@ class PageProcessor:
             
             logger.info(f"[GOST] Отчет сохранен для документа {document_id}")
             
+            # Создаем визуализацию ошибок на изображениях страниц сразу после получения результатов
+            if gost_data and 'pages' in gost_data:
+                logger.info(f"[GOST] Начало создания визуализации ошибок для документа {document_id}")
+                try:
+                    from utils.gost_visualizer import visualize_gost_errors
+                    import os
+                    
+                    pages = sorted(document.pages, key=lambda p: p.page_number)
+                    pages_data = gost_data.get('pages', [])
+                    
+                    # Создаем словарь для быстрого поиска данных по номеру страницы
+                    pages_data_dict = {pg_data.get('page'): pg_data for pg_data in pages_data}
+                    
+                    for page in pages:
+                        # Находим данные для этой страницы
+                        page_gost_data = pages_data_dict.get(page.page_number)
+                        
+                        # Если есть ошибка с координатами, создаем визуализацию
+                        if page_gost_data and page_gost_data.get('gosterror', '').strip():
+                            # Проверяем, что координаты не нулевые
+                            position_x = float(page_gost_data.get('positionX', 0))
+                            position_y = float(page_gost_data.get('positionY', 0))
+                            width = float(page_gost_data.get('width', 0))
+                            height = float(page_gost_data.get('height', 0))
+                            
+                            if position_x != 0 or position_y != 0 or width != 0 or height != 0:
+                                image_path = os.path.join("uploads", page.image_path)
+                                if os.path.exists(image_path):
+                                    # Создаем путь для визуализированного изображения
+                                    base_dir = os.path.dirname(image_path)
+                                    base_name = os.path.basename(image_path)
+                                    name, ext = os.path.splitext(base_name)
+                                    vis_path = os.path.join(base_dir, f"{name}_gost{ext}")
+                                    
+                                    # Создаем визуализацию
+                                    try:
+                                        visualize_gost_errors(image_path, [page_gost_data], vis_path)
+                                        logger.info(f"[GOST] Визуализация создана для страницы {page.page_number}: {vis_path}")
+                                    except Exception as vis_error:
+                                        logger.error(f"[GOST] Ошибка создания визуализации для страницы {page.page_number}: {vis_error}")
+                                        import traceback
+                                        logger.error(f"[GOST] Трассировка: {traceback.format_exc()}")
+                                else:
+                                    logger.warning(f"[GOST] Изображение страницы {page.page_number} не найдено: {image_path}")
+                    
+                    logger.info(f"[GOST] Визуализация ошибок завершена для документа {document_id}")
+                except Exception as vis_exception:
+                    logger.error(f"[GOST] Ошибка при создании визуализации для документа {document_id}: {vis_exception}")
+                    import traceback
+                    logger.error(f"[GOST] Трассировка: {traceback.format_exc()}")
+                    # Не прерываем выполнение, визуализация не критична
+            
         except Exception as e:
             logger.error(f"[GOST] Ошибка проверки ГОСТ для документа {document_id}: {e}")
             import traceback

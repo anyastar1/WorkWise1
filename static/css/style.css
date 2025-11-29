@@ -49,6 +49,14 @@
 body {
   background-color: var(--color-background-main);
   color: var(--color-text-main);
+  padding-top: 80px; /* Отступ сверху для всех страниц, чтобы header не перекрывал контент */
+}
+
+/* Исключения для страниц без top-nav (login, registration, password-recovery) */
+#loginPage,
+#registrationPage,
+#passwordRecoveryPage {
+  padding-top: 0;
 }
 
 /* Применение переменных к ключевым элементам для поддержки смены темы */
@@ -90,7 +98,7 @@ body {
   color: var(--color-text-main);
   font-weight: 600;
   margin-bottom: 30px;
-  padding-top: 30px; /* Учитываем высоту top-nav */
+  padding-top: 0; /* Отступ уже добавлен в body */
 }
 
 .setting-section {
@@ -897,10 +905,10 @@ input:checked + .slider:before {
 
 /* Основной контент */
 .main-content {
-  margin-top: 90px;
+  margin-top: 0; /* Отступ уже добавлен в body */
   padding: 40px;
   transition: margin-left 0.4s ease;
-  height: calc(100vh - 90px);
+  height: calc(100vh - 80px); /* Учитываем padding-top body */
   overflow-y: auto;
 }
 
@@ -1705,7 +1713,7 @@ input:checked + .slider:before {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding-top: 80px; /* Отступ сверху, чтобы контент не перекрывался top-nav */
+  padding-top: 0; /* Отступ уже добавлен в body */
 }
 
 /* Блок настроек (карточка), который должен быть темным */

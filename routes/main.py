@@ -314,7 +314,7 @@ def view_gost_report(document_id):
                     'height': 0
                 }
             
-            # Если есть ошибка, создаем визуализацию
+            # Если есть ошибка, проверяем наличие визуализированного изображения
             visualized_image = None
             if page_gost_data.get('gosterror', '').strip():
                 image_path = os.path.join("uploads", page.image_path)
@@ -325,13 +325,18 @@ def view_gost_report(document_id):
                     name, ext = os.path.splitext(base_name)
                     vis_path = os.path.join(base_dir, f"{name}_gost{ext}")
                     
-                    # Создаем визуализацию
-                    try:
-                        visualize_gost_errors(image_path, [page_gost_data], vis_path)
-                        # Сохраняем относительный путь для использования в шаблоне
+                    # Проверяем, существует ли уже визуализированное изображение
+                    if os.path.exists(vis_path):
+                        # Используем существующее изображение
                         visualized_image = os.path.relpath(vis_path, "uploads")
-                    except Exception as e:
-                        print(f"[ERROR] Ошибка создания визуализации для страницы {page.page_number}: {e}")
+                    else:
+                        # Создаем визуализацию только если её еще нет
+                        try:
+                            visualize_gost_errors(image_path, [page_gost_data], vis_path)
+                            # Сохраняем относительный путь для использования в шаблоне
+                            visualized_image = os.path.relpath(vis_path, "uploads")
+                        except Exception as e:
+                            print(f"[ERROR] Ошибка создания визуализации для страницы {page.page_number}: {e}")
             
             pages_with_visualization.append({
                 'page_number': page.page_number,
