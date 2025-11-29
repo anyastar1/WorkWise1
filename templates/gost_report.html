@@ -338,6 +338,9 @@
               <div style="margin-top: 10px; color: var(--color-text-main, #b6d4cf); font-size: 16px; max-width: 800px; margin-left: auto; margin-right: auto;">
                 {{ gost_data.get('verdict', '') }}
               </div>
+              <div style="margin-top: 10px; color: var(--color-text-main, #b6d4cf); font-size: 16px; max-width: 800px; margin-left: auto; margin-right: auto;">
+                {{ gost_data.get('errors', '') }}
+              </div>
             </div>
           {% else %}
             <!-- Старый формат (текстовый) -->
