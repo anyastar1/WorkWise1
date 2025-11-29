@@ -110,12 +110,33 @@
         border-radius: 5px;
         color: white;
         font-size: 14px;
+        transition: all 0.3s;
       }
       
       .status-queued { border-left: 4px solid #ffa500; }
       .status-processing { border-left: 4px solid #2196f3; }
       .status-completed { border-left: 4px solid #4caf50; }
-      .status-error { border-left: 4px solid #f44336; }
+      .status-error { 
+        border-left: 4px solid #f44336;
+        cursor: pointer;
+      }
+      
+      .status-error:hover {
+        background: rgba(244, 67, 54, 0.2);
+        transform: translateX(5px);
+      }
+      
+      .status-error.retrying {
+        opacity: 0.6;
+        cursor: wait;
+      }
+      
+      .retry-indicator {
+        display: inline-block;
+        margin-left: 10px;
+        font-size: 12px;
+        color: #ffd700;
+      }
       
       @media (max-width: 768px) {
         .document-container {
@@ -162,9 +183,9 @@
             Загрузка статуса...
           </div>
           {% if document.gost_check_completed %}
-            <div style="margin-top: 20px;">
+            <div id="reportLinkContainer" style="margin-top: 20px;">
               <a href="{{ url_for('main.view_gost_report', document_id=document.id) }}" class="back-button" style="background: #4caf50;">
-                Просмотреть отчет о соответствии ГОСТу
+                📄 Просмотреть отчет о соответствии ГОСТу
               </a>
             </div>
           {% elif document.all_pages_processed %}
@@ -226,6 +247,16 @@
             
             // Обновляем список статусов страниц
             const pagesStatusList = document.getElementById('pagesStatusList');
+            
+            // Сохраняем существующие элементы с классом retrying, чтобы не потерять состояние
+            const existingRetryingItems = {};
+            pagesStatusList.querySelectorAll('.page-status-item.retrying').forEach(item => {
+              const pageId = item.dataset.pageId;
+              if (pageId) {
+                existingRetryingItems[pageId] = item.innerHTML;
+              }
+            });
+            
             pagesStatusList.innerHTML = '<h2 style="color: var(--color-text-main, #b6d4cf); margin-bottom: 15px;">Статусы страниц</h2>';
             
             data.pages.forEach(page => {
@@ -239,23 +270,132 @@
               
               const pageItem = document.createElement('div');
               pageItem.className = `page-status-item ${statusClass}`;
-              pageItem.innerHTML = `
-                Страница ${page.page_number}: ${statusText}
-                ${page.error ? `<br><small style="color: #ffcccc;">Ошибка: ${page.error}</small>` : ''}
-              `;
+              pageItem.dataset.pageId = page.page_id;
+              pageItem.dataset.pageNumber = page.page_number;
+              
+              // Если элемент был в процессе повторной обработки, сохраняем его состояние
+              if (existingRetryingItems[page.page_id] && page.status === 'queued') {
+                pageItem.innerHTML = existingRetryingItems[page.page_id];
+                pageItem.classList.add('status-queued');
+                pageItem.classList.remove('status-error');
+              } else {
+                let errorText = '';
+                if (page.error) {
+                  errorText = `<br><small style="color: #ffcccc;">Ошибка: ${page.error}</small>`;
+                }
+                
+                let retryHint = '';
+                if (page.status === 'error') {
+                  retryHint = '<br><small style="color: #ffd700; font-style: italic;">💡 Кликните для повторной обработки</small>';
+                }
+                
+                pageItem.innerHTML = `
+                  Страница ${page.page_number}: ${statusText}${retryHint}${errorText}
+                `;
+              }
+              
+              // Добавляем обработчик клика для страниц с ошибкой
+              if (page.status === 'error' && !pageItem.classList.contains('retrying')) {
+                pageItem.addEventListener('click', function() {
+                  retryPageProcessing(documentId, page.page_id, page.page_number, pageItem);
+                });
+              }
+              
               pagesStatusList.appendChild(pageItem);
             });
             
             // Если все страницы обработаны и проверка ГОСТ завершена, останавливаем обновление
             if (data.all_pages_processed && data.gost_check_completed) {
               clearInterval(statusCheckInterval);
-              // Перезагружаем страницу для показа ссылки на отчет
-              setTimeout(() => location.reload(), 2000);
+              
+              // Обновляем DOM для показа ссылки на отчет без перезагрузки страницы
+              const progressSection = document.getElementById('progressSection');
+              const reportLink = progressSection.querySelector('a[href*="/report"]');
+              
+              if (!reportLink) {
+                // Создаем ссылку на отчет, если её еще нет
+                const reportDiv = document.createElement('div');
+                reportDiv.style.marginTop = '20px';
+                reportDiv.innerHTML = `
+                  <a href="/document/${documentId}/report" class="back-button" style="background: #4caf50;">
+                    📄 Просмотреть отчет о соответствии ГОСТу
+                  </a>
+                `;
+                progressSection.appendChild(reportDiv);
+              } else {
+                // Показываем существующую ссылку, если она была скрыта
+                reportLink.style.display = 'inline-block';
+              }
+              
+              // Обновляем статус на "Завершено"
+              const statusInfo = document.getElementById('statusInfo');
+              statusInfo.innerHTML = `
+                <strong style="color: #4caf50;">✓ Все страницы обработаны. Проверка ГОСТ завершена.</strong>
+              `;
             }
           })
           .catch(error => {
             console.error('Ошибка получения статуса:', error);
           });
+      }
+
+      // Функция для повторной обработки страницы
+      function retryPageProcessing(documentId, pageId, pageNumber, pageItem) {
+        // Проверяем, не идет ли уже повторная обработка
+        if (pageItem.classList.contains('retrying')) {
+          return;
+        }
+        
+        // Добавляем индикатор загрузки
+        pageItem.classList.add('retrying');
+        const originalHTML = pageItem.innerHTML;
+        pageItem.innerHTML = `
+          Страница ${pageNumber}: Повторная обработка...
+          <span class="retry-indicator">⏳</span>
+        `;
+        
+        // Отправляем запрос на сервер
+        fetch(`/api/document/${documentId}/page/${pageId}/retry`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // Показываем успешное сообщение
+            pageItem.innerHTML = `
+              Страница ${pageNumber}: Добавлена в очередь
+              <span class="retry-indicator">✓</span>
+            `;
+            pageItem.classList.remove('retrying');
+            pageItem.classList.remove('status-error');
+            pageItem.classList.add('status-queued');
+            
+            // Обновляем статус через небольшую задержку
+            setTimeout(() => {
+              updateStatus();
+            }, 1000);
+          } else {
+            // Показываем ошибку
+            pageItem.classList.remove('retrying');
+            pageItem.innerHTML = `
+              Страница ${pageNumber}: Ошибка
+              <br><small style="color: #ffcccc;">Не удалось добавить в очередь: ${data.error || 'Неизвестная ошибка'}</small>
+              <br><small style="color: #ffd700; font-style: italic;">💡 Кликните для повторной попытки</small>
+            `;
+          }
+        })
+        .catch(error => {
+          console.error('Ошибка при повторной обработке страницы:', error);
+          pageItem.classList.remove('retrying');
+          pageItem.innerHTML = `
+            Страница ${pageNumber}: Ошибка
+            <br><small style="color: #ffcccc;">Ошибка запроса: ${error.message}</small>
+            <br><small style="color: #ffd700; font-style: italic;">💡 Кликните для повторной попытки</small>
+          `;
+        });
       }
 
       // Обновляем статус каждые 2 секунды

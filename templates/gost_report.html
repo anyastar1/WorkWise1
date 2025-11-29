@@ -54,30 +54,183 @@
       
       .report-content {
         background: var(--color-box-background, #339989);
-        padding: 30px;
+        padding: 40px;
         border-radius: 10px;
-        color: white;
-        line-height: 1.6;
+        color: #f0f0f0;
+        line-height: 1.8;
+        font-size: 16px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        min-height: 200px;
+      }
+      
+      /* Убеждаемся, что текст виден */
+      .report-content p,
+      .report-content div,
+      .report-content span {
+        color: #f0f0f0;
+      }
+      
+      .report-content h1 {
+        color: #ffffff;
+        font-size: 28px;
+        margin-top: 0;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.3);
       }
       
       .report-content h2 {
-        color: white;
+        color: #ffffff;
+        font-size: 24px;
+        margin-top: 30px;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+      
+      .report-content h3 {
+        color: #ffffff;
+        font-size: 20px;
+        margin-top: 25px;
+        margin-bottom: 12px;
+      }
+      
+      .report-content h4 {
+        color: #ffffff;
+        font-size: 18px;
         margin-top: 20px;
         margin-bottom: 10px;
       }
       
-      .report-content h3 {
-        color: white;
-        margin-top: 15px;
-        margin-bottom: 8px;
+      .report-content p {
+        margin-bottom: 15px;
+        text-align: justify;
       }
       
       .report-content ul, .report-content ol {
-        margin-left: 20px;
-        margin-bottom: 15px;
+        margin-left: 30px;
+        margin-bottom: 20px;
+        padding-left: 20px;
       }
       
-      .report-content strong {
+      .report-content li {
+        margin-bottom: 10px;
+        padding-left: 5px;
+      }
+      
+      .report-content ul li {
+        list-style-type: disc;
+      }
+      
+      .report-content ol li {
+        list-style-type: decimal;
+      }
+      
+      .report-content strong, .report-content b {
+        font-weight: 700;
+        color: #ffffff;
+      }
+      
+      .report-content em, .report-content i {
+        font-style: italic;
+        color: #e0e0e0;
+      }
+      
+      .report-content code {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #ffd700;
+      }
+      
+      .report-content pre {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 15px;
+        border-radius: 5px;
+        overflow-x: auto;
+        margin: 15px 0;
+        border-left: 4px solid #4caf50;
+      }
+      
+      .report-content pre code {
+        background: transparent;
+        padding: 0;
+        color: #f0f0f0;
+      }
+      
+      .report-content blockquote {
+        border-left: 4px solid #ff9800;
+        padding-left: 20px;
+        margin: 20px 0;
+        color: #e0e0e0;
+        font-style: italic;
+      }
+      
+      .report-content a {
+        color: #4caf50;
+        text-decoration: underline;
+      }
+      
+      .report-content a:hover {
+        color: #66bb6a;
+      }
+      
+      .report-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+      }
+      
+      .report-content table th,
+      .report-content table td {
+        padding: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-align: left;
+      }
+      
+      .report-content table th {
+        background: rgba(0, 0, 0, 0.3);
+        font-weight: 600;
+        color: #ffffff;
+      }
+      
+      .report-content table tr:nth-child(even) {
+        background: rgba(0, 0, 0, 0.1);
+      }
+      
+      .report-content hr {
+        border: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        margin: 30px 0;
+      }
+      
+      /* Стили для нарушений и рекомендаций */
+      .violation-item {
+        background: rgba(244, 67, 54, 0.1);
+        border-left: 4px solid #f44336;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 5px;
+      }
+      
+      .recommendation-item {
+        background: rgba(76, 175, 80, 0.1);
+        border-left: 4px solid #4caf50;
+        padding: 15px;
+        margin: 15px 0;
+        border-radius: 5px;
+      }
+      
+      /* Улучшенное отображение списков с маркерами */
+      .report-content ul li::marker {
+        color: #4caf50;
+      }
+      
+      .report-content ol li::marker {
+        color: #4caf50;
         font-weight: 600;
       }
       
@@ -130,9 +283,173 @@
           </div>
         </div>
 
-        <div class="report-content">
-          {{ report.report_text | safe }}
+        <div class="report-content" id="reportContent">
+          {% if report and report.report_text %}
+            {{ report.report_text | safe }}
+          {% else %}
+            <p style="color: #ffcccc;">Текст отчета недоступен. Пожалуйста, попробуйте обновить страницу или обратитесь к администратору.</p>
+          {% endif %}
         </div>
+        
+        <script>
+          // Улучшаем форматирование текста отчета
+          document.addEventListener('DOMContentLoaded', function() {
+            const reportContent = document.getElementById('reportContent');
+            if (!reportContent) {
+              console.error('Элемент reportContent не найден');
+              return;
+            }
+            
+            // Сохраняем исходный HTML для обработки
+            let content = reportContent.innerHTML.trim();
+            
+            // Проверяем, есть ли содержимое
+            if (!content || content === '' || content === '<p></p>') {
+              console.warn('Содержимое отчета пусто');
+              reportContent.innerHTML = '<p style="color: #ffcccc;">Текст отчета пуст. Пожалуйста, попробуйте обновить страницу.</p>';
+              return;
+            }
+            
+            console.log('Начальная длина контента:', content.length);
+            console.log('Первые 200 символов:', content.substring(0, 200));
+            
+            // Если контент уже содержит HTML теги, работаем с ним аккуратно
+            const hasHtmlTags = /<[a-z][\s\S]*>/i.test(content);
+            
+            // Если контент уже в HTML формате и содержит достаточно текста, применяем только улучшения
+            if (hasHtmlTags && content.length > 100) {
+              // Только улучшаем отображение номеров ГОСТ и ключевых слов
+              content = content.replace(/(ГОСТ\s+[\d\.-]+)/gi, '<strong style="color: #ffd700;">$1</strong>');
+              
+              const keywords = ['нарушение', 'рекомендация', 'вердикт', 'соответствие'];
+              keywords.forEach(keyword => {
+                const regex = new RegExp(`\\b(${keyword})\\b`, 'gi');
+                content = content.replace(regex, '<strong style="color: #4caf50;">$1</strong>');
+              });
+              
+              reportContent.innerHTML = content;
+              return;
+            }
+            
+            if (!hasHtmlTags) {
+              // Если это простой текст, форматируем его
+              
+              // Обрабатываем markdown заголовки
+              content = content.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+              content = content.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+              content = content.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+              content = content.replace(/^####\s+(.+)$/gm, '<h4>$1</h4>');
+              
+              // Обрабатываем жирный и курсивный текст
+              content = content.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+              content = content.replace(/\*(.+?)\*/g, '<em>$1</em>');
+              
+              // Обрабатываем блоки кода
+              content = content.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+              content = content.replace(/`([^`]+)`/g, '<code>$1</code>');
+              
+              // Обрабатываем ссылки
+              content = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+              
+              // Обрабатываем нумерованные списки
+              const lines = content.split('\n');
+              let result = [];
+              let inOrderedList = false;
+              let inUnorderedList = false;
+              
+              for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Нумерованный список
+                const orderedMatch = line.match(/^(\d+)\.\s+(.+)$/);
+                if (orderedMatch) {
+                  if (!inOrderedList) {
+                    if (inUnorderedList) {
+                      result.push('</ul>');
+                      inUnorderedList = false;
+                    }
+                    result.push('<ol>');
+                    inOrderedList = true;
+                  }
+                  result.push(`<li>${orderedMatch[2]}</li>`);
+                  continue;
+                }
+                
+                // Маркированный список
+                const unorderedMatch = line.match(/^[-*•]\s+(.+)$/);
+                if (unorderedMatch) {
+                  if (!inUnorderedList) {
+                    if (inOrderedList) {
+                      result.push('</ol>');
+                      inOrderedList = false;
+                    }
+                    result.push('<ul>');
+                    inUnorderedList = true;
+                  }
+                  result.push(`<li>${unorderedMatch[1]}</li>`);
+                  continue;
+                }
+                
+                // Закрываем списки перед обычным текстом
+                if (inOrderedList && line) {
+                  result.push('</ol>');
+                  inOrderedList = false;
+                }
+                if (inUnorderedList && line) {
+                  result.push('</ul>');
+                  inUnorderedList = false;
+                }
+                
+                // Обычный текст
+                if (line) {
+                  // Если строка начинается с заголовка, не оборачиваем в параграф
+                  if (line.startsWith('<h')) {
+                    result.push(line);
+                  } else {
+                    result.push(`<p>${line}</p>`);
+                  }
+                } else {
+                  result.push('<br>');
+                }
+              }
+              
+              // Закрываем открытые списки
+              if (inOrderedList) result.push('</ol>');
+              if (inUnorderedList) result.push('</ul>');
+              
+              content = result.join('\n');
+            }
+            
+            // Улучшаем отображение номеров ГОСТ (работает и с HTML и с текстом)
+            content = content.replace(/(ГОСТ\s+[\d\.-]+)/gi, '<strong style="color: #ffd700;">$1</strong>');
+            
+            // Улучшаем отображение ключевых слов
+            const keywords = ['нарушение', 'рекомендация', 'вердикт', 'соответствие'];
+            keywords.forEach(keyword => {
+              const regex = new RegExp(`\\b(${keyword})\\b`, 'gi');
+              content = content.replace(regex, '<strong style="color: #4caf50;">$1</strong>');
+            });
+            
+            // Убираем лишние пустые параграфы и переносы
+            content = content.replace(/<p>\s*<\/p>/g, '');
+            content = content.replace(/<p><br><\/p>/g, '');
+            content = content.replace(/(<br>\s*){3,}/g, '<br><br>');
+            
+            // Проверяем, что после обработки контент не пустой
+            const trimmedContent = content.trim();
+            if (!trimmedContent || trimmedContent === '' || trimmedContent === '<p></p>') {
+              console.error('Контент стал пустым после обработки');
+              reportContent.innerHTML = '<p style="color: #ffcccc;">Ошибка форматирования отчета. Исходный текст: ' + 
+                (reportContent.textContent || 'недоступен').substring(0, 500) + '</p>';
+              return;
+            }
+            
+            console.log('Финальная длина контента:', trimmedContent.length);
+            
+            // Применяем улучшенный контент
+            reportContent.innerHTML = trimmedContent;
+          });
+        </script>
 
         <div style="text-align: center; margin-top: 30px;">
           <a href="{{ url_for('main.view_document', document_id=document.id) }}" class="back-button">← Вернуться к документу</a>

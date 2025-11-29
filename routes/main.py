@@ -148,6 +148,7 @@ def document_status(document_id):
     pages = sorted(document.pages, key=lambda p: p.page_number)
     pages_status = [
         {
+            "page_id": p.id,
             "page_number": p.page_number,
             "status": p.status,
             "error": p.processing_error
@@ -177,6 +178,66 @@ def document_status(document_id):
     })
 
 
+@bp.route("/api/document/<int:document_id>/page/<int:page_id>/retry", methods=["POST"])
+@require_login
+def retry_page_processing(document_id, page_id):
+    """API для повторной обработки страницы"""
+    user = get_current_user(g.db_session)
+    db = g.db_session
+    
+    document = db.get(Document, document_id)
+    
+    if not document:
+        return jsonify({"error": "Документ не найден"}), 404
+    
+    # Проверка прав доступа
+    if document.user_id != user.id:
+        return jsonify({"error": "Нет доступа"}), 403
+    
+    # Находим страницу
+    page = db.get(Page, page_id)
+    
+    if not page:
+        return jsonify({"error": "Страница не найдена"}), 404
+    
+    # Проверяем, что страница принадлежит документу
+    if page.document_id != document_id:
+        return jsonify({"error": "Страница не принадлежит документу"}), 400
+    
+    # Проверяем, что страница в статусе ошибки
+    if page.status != PageStatus.ERROR.value:
+        return jsonify({"error": f"Страница не в статусе ошибки (текущий статус: {page.status})"}), 400
+    
+    # Проверяем существование изображения
+    image_path = os.path.join("uploads", page.image_path)
+    if not os.path.exists(image_path):
+        return jsonify({"error": f"Изображение страницы не найдено: {image_path}"}), 404
+    
+    try:
+        # Сбрасываем статус страницы на "в очереди"
+        page.status = PageStatus.QUEUED.value
+        page.processing_error = None
+        db.commit()
+        
+        # Добавляем страницу в очередь обработки
+        processor = get_page_processor()
+        processor.add_page_task(page.id, image_path, page.page_number)
+        
+        print(f"[INFO] Страница {page.page_number} (ID: {page.id}) добавлена в очередь для повторной обработки")
+        
+        return jsonify({
+            "success": True,
+            "message": f"Страница {page.page_number} добавлена в очередь обработки",
+            "page_id": page.id,
+            "page_number": page.page_number
+        })
+    
+    except Exception as e:
+        db.rollback()
+        print(f"[ERROR] Ошибка при повторной обработке страницы {page_id}: {e}")
+        return jsonify({"error": f"Ошибка при добавлении страницы в очередь: {str(e)}"}), 500
+
+
 @bp.route("/document/<int:document_id>/report")
 @require_login
 def view_gost_report(document_id):
@@ -200,7 +261,20 @@ def view_gost_report(document_id):
         flash("Проверка на соответствие ГОСТу еще не завершена", "error")
         return redirect(url_for("main.view_document", document_id=document_id))
     
-    gost_report = document.gost_report
+    # Получаем отчет из БД
+    from database import GOSTReport
+    gost_report = db.query(GOSTReport).filter_by(document_id=document_id).first()
+    
+    if not gost_report:
+        flash("Отчет не найден в базе данных", "error")
+        return redirect(url_for("main.view_document", document_id=document_id))
+    
+    # Проверяем, что текст отчета не пустой
+    if not gost_report.report_text or gost_report.report_text.strip() == "":
+        flash("Текст отчета пуст", "error")
+        return redirect(url_for("main.view_document", document_id=document_id))
+    
+    print(f"[DEBUG] Загрузка отчета для документа {document_id}, длина текста: {len(gost_report.report_text)}")
     
     return render_template("gost_report.html", document=document, report=gost_report, user=user)
 
