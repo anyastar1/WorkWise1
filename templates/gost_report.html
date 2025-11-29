@@ -249,6 +249,53 @@
         background: #2a7a6e;
       }
       
+      /* Стили для нового формата отчета */
+      .pages-list {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      
+      .page-item {
+        background: var(--color-box-background, #339989);
+        padding: 20px;
+        border-radius: 10px;
+      }
+      
+      .page-number {
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      
+      .page-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        display: block;
+        margin: 0 auto;
+      }
+      
+      .gost-error-section {
+        background: rgba(244, 67, 54, 0.1);
+        border-left: 4px solid #f44336;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+      }
+      
+      .gost-success-section {
+        background: rgba(76, 175, 80, 0.1);
+        border-left: 4px solid #4caf50;
+        padding: 15px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+      }
+      
       @media (max-width: 768px) {
         .report-container {
           margin: 10px;
@@ -278,18 +325,94 @@
           <div style="color: var(--color-text-main, #b6d4cf); font-size: 14px; opacity: 0.8;">
             Документ {{ document.id }} | {{ document.created_at.strftime('%d.%m.%Y %H:%M') }}
           </div>
-          <div class="verdict-badge verdict-{{ report.verdict }}">
-            Вердикт: {{ 'Соответствует' if report.verdict == 'да' else ('Не соответствует' if report.verdict == 'нет' else 'Частично соответствует') }}
-          </div>
-        </div>
-
-        <div class="report-content" id="reportContent">
-          {% if report and report.report_text %}
-            {{ report.report_text | safe }}
+          
+          {% if gost_data %}
+            <!-- Новый формат с JSON данными -->
+            <div style="margin-top: 20px; text-align: center;">
+              <div class="verdict-badge verdict-{{ report.verdict }}" style="font-size: 18px; padding: 15px 30px;">
+                Вердикт: {{ 'Соответствует' if report.verdict == 'да' else ('Не соответствует' if report.verdict == 'нет' else 'Частично соответствует') }}
+              </div>
+              <div style="margin-top: 15px; color: white; font-size: 24px; font-weight: 600;">
+                Оценка: {{ gost_data.get('score', 0) }}/100
+              </div>
+              <div style="margin-top: 10px; color: var(--color-text-main, #b6d4cf); font-size: 16px; max-width: 800px; margin-left: auto; margin-right: auto;">
+                {{ gost_data.get('verdict', '') }}
+              </div>
+            </div>
           {% else %}
-            <p style="color: #ffcccc;">Текст отчета недоступен. Пожалуйста, попробуйте обновить страницу или обратитесь к администратору.</p>
+            <!-- Старый формат (текстовый) -->
+            <div class="verdict-badge verdict-{{ report.verdict }}">
+              Вердикт: {{ 'Соответствует' if report.verdict == 'да' else ('Не соответствует' if report.verdict == 'нет' else 'Частично соответствует') }}
+            </div>
           {% endif %}
         </div>
+
+        {% if gost_data and pages_with_visualization %}
+          <!-- Новый формат: отображение страниц с ошибками -->
+          <div class="pages-list" style="margin-top: 30px;">
+            {% for page_info in pages_with_visualization %}
+              {% set page = document.pages | selectattr('page_number', 'equalto', page_info.page_number) | first %}
+              {% if page %}
+                <div class="page-item" style="margin-bottom: 30px;">
+                  <div class="page-number">Страница {{ page_info.page_number }}</div>
+                  
+                  {% if page_info.gost_data and page_info.gost_data.get('gosterror', '').strip() %}
+                    <!-- Отображение ошибки ГОСТ -->
+                    <div class="gost-error-section" style="background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
+                      <h3 style="color: #f44336; margin-top: 0; margin-bottom: 10px; font-size: 18px;">
+                        ⚠️ Нарушение ГОСТ:
+                      </h3>
+                      <p style="color: #f0f0f0; margin-bottom: 15px; line-height: 1.6;">
+                        {{ page_info.gost_data.get('gosterror', '') }}
+                      </p>
+                      
+                      {% if page_info.gost_data.get('howtofix', '').strip() %}
+                        <h4 style="color: #4caf50; margin-top: 15px; margin-bottom: 10px; font-size: 16px;">
+                          💡 Рекомендация по исправлению:
+                        </h4>
+                        <p style="color: #f0f0f0; margin-bottom: 0; line-height: 1.6;">
+                          {{ page_info.gost_data.get('howtofix', '') }}
+                        </p>
+                      {% endif %}
+                    </div>
+                  {% else %}
+                    <!-- Нет ошибок на странице -->
+                    <div class="gost-success-section" style="background: rgba(76, 175, 80, 0.1); border-left: 4px solid #4caf50; padding: 15px; margin-bottom: 15px; border-radius: 5px;">
+                      <p style="color: #4caf50; margin: 0; font-weight: 600;">
+                        ✓ Нарушений ГОСТ не обнаружено
+                      </p>
+                    </div>
+                  {% endif %}
+                  
+                  <!-- Изображение страницы -->
+                  {% if page_info.visualized_image %}
+                    <img
+                      src="{{ url_for('main.uploaded_file', filename=page_info.visualized_image) }}"
+                      alt="Страница {{ page_info.page_number }} с визуализацией ошибок ГОСТ"
+                      class="page-image"
+                      style="border: 2px solid {% if page_info.gost_data and page_info.gost_data.get('gosterror', '').strip() %}#f44336{% else %}#4caf50{% endif %};"
+                    />
+                  {% else %}
+                    <img
+                      src="{{ url_for('main.uploaded_file', filename=page.image_path) }}"
+                      alt="Страница {{ page_info.page_number }}"
+                      class="page-image"
+                    />
+                  {% endif %}
+                </div>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% else %}
+          <!-- Старый формат: текстовый отчет -->
+          <div class="report-content" id="reportContent">
+            {% if report and report.report_text %}
+              {{ report.report_text | safe }}
+            {% else %}
+              <p style="color: #ffcccc;">Текст отчета недоступен. Пожалуйста, попробуйте обновить страницу или обратитесь к администратору.</p>
+            {% endif %}
+          </div>
+        {% endif %}
         
         <script>
           // Улучшаем форматирование текста отчета

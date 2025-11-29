@@ -2,9 +2,20 @@
 Главный файл приложения WorkWise
 """
 
+import logging
 from flask import Flask, g
 from database import initialize_database
 from config import SECRET_KEY
+
+# Настройка логирования
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('workwise.log', encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
 
 # Создаём приложение Flask
 app = Flask(__name__, static_folder="static", template_folder="templates")

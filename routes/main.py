@@ -242,6 +242,10 @@ def retry_page_processing(document_id, page_id):
 @require_login
 def view_gost_report(document_id):
     """Страница отчета о соответствии ГОСТу"""
+    import json
+    import os
+    from utils.gost_visualizer import visualize_gost_errors
+    
     user = get_current_user(g.db_session)
     db = g.db_session
     
@@ -276,7 +280,73 @@ def view_gost_report(document_id):
     
     print(f"[DEBUG] Загрузка отчета для документа {document_id}, длина текста: {len(gost_report.report_text)}")
     
-    return render_template("gost_report.html", document=document, report=gost_report, user=user)
+    # Пытаемся распарсить JSON
+    gost_data = None
+    try:
+        gost_data = json.loads(gost_report.report_text)
+        print(f"[DEBUG] JSON успешно распарсен, score: {gost_data.get('score')}, страниц: {len(gost_data.get('pages', []))}")
+    except json.JSONDecodeError:
+        print(f"[WARNING] Не удалось распарсить JSON, используем старый формат")
+        gost_data = None
+    
+    # Если JSON успешно распарсен, создаем визуализированные изображения
+    pages_with_visualization = []
+    if gost_data and 'pages' in gost_data:
+        pages = sorted(document.pages, key=lambda p: p.page_number)
+        pages_data = gost_data.get('pages', [])
+        
+        # Создаем словарь для быстрого поиска данных по номеру страницы
+        pages_data_dict = {pg_data.get('page'): pg_data for pg_data in pages_data}
+        
+        for page in pages:
+            # Находим данные для этой страницы
+            page_gost_data = pages_data_dict.get(page.page_number)
+            
+            # Если данных нет, создаем пустую запись
+            if not page_gost_data:
+                page_gost_data = {
+                    'page': page.page_number,
+                    'gosterror': '',
+                    'howtofix': '',
+                    'positionX': 0,
+                    'positionY': 0,
+                    'width': 0,
+                    'height': 0
+                }
+            
+            # Если есть ошибка, создаем визуализацию
+            visualized_image = None
+            if page_gost_data.get('gosterror', '').strip():
+                image_path = os.path.join("uploads", page.image_path)
+                if os.path.exists(image_path):
+                    # Создаем путь для визуализированного изображения
+                    base_dir = os.path.dirname(image_path)
+                    base_name = os.path.basename(image_path)
+                    name, ext = os.path.splitext(base_name)
+                    vis_path = os.path.join(base_dir, f"{name}_gost{ext}")
+                    
+                    # Создаем визуализацию
+                    try:
+                        visualize_gost_errors(image_path, [page_gost_data], vis_path)
+                        # Сохраняем относительный путь для использования в шаблоне
+                        visualized_image = os.path.relpath(vis_path, "uploads")
+                    except Exception as e:
+                        print(f"[ERROR] Ошибка создания визуализации для страницы {page.page_number}: {e}")
+            
+            pages_with_visualization.append({
+                'page_number': page.page_number,
+                'visualized_image': visualized_image,
+                'gost_data': page_gost_data
+            })
+    
+    return render_template(
+        "gost_report.html", 
+        document=document, 
+        report=gost_report, 
+        user=user,
+        gost_data=gost_data,
+        pages_with_visualization=pages_with_visualization
+    )
 
 
 def allowed_file(filename):
