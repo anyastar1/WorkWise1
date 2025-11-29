@@ -152,17 +152,80 @@ class PageProcessor:
             print(f"[DEBUG] Длина ответа: {len(response_text)} символов")
             print(f"[DEBUG] Первые 500 символов ответа: {response_text[:500]}")
             
-            # Валидируем XML
-            print(f"[INFO] Валидация XML для страницы {page_number}...")
-            is_valid, error_msg = validate_xml_structure(response_text)
-            if not is_valid:
-                print(f"[ERROR] Невалидный XML для страницы {page_number}: {error_msg}")
-                raise XMLParseError(f"Невалидный XML: {error_msg}")
+            # Пытаемся распарсить XML с повторными попытками
+            max_parse_attempts = 3
+            blocks_data = None
+            last_error = None
             
-            print(f"[INFO] XML валиден, начинаем парсинг...")
-            # Парсим XML
-            blocks_data = parse_page_xml(response_text, page_number)
-            print(f"[INFO] Распарсено блоков: {len(blocks_data)}")
+            for parse_attempt in range(1, max_parse_attempts + 1):
+                try:
+                    print(f"[INFO] Попытка парсинга XML {parse_attempt}/{max_parse_attempts} для страницы {page_number}...")
+                    
+                    # Валидируем XML
+                    is_valid, error_msg = validate_xml_structure(response_text)
+                    if not is_valid:
+                        print(f"[WARNING] Невалидный XML (попытка {parse_attempt}): {error_msg}")
+                        if parse_attempt < max_parse_attempts:
+                            # Пробуем улучшить XML перед следующей попыткой
+                            print(f"[INFO] Попытка улучшить XML...")
+                            # Можем попробовать запросить у модели исправление
+                            continue
+                        else:
+                            raise XMLParseError(f"Невалидный XML после {max_parse_attempts} попыток: {error_msg}")
+                    
+                    print(f"[INFO] XML валиден, начинаем парсинг...")
+                    # Парсим XML
+                    blocks_data = parse_page_xml(response_text, page_number)
+                    print(f"[INFO] Распарсено блоков: {len(blocks_data)}")
+                    break  # Успешно распарсили
+                    
+                except XMLParseError as e:
+                    last_error = e
+                    print(f"[WARNING] Ошибка парсинга XML (попытка {parse_attempt}/{max_parse_attempts}): {str(e)}")
+                    
+                    if parse_attempt < max_parse_attempts:
+                        # Пробуем запросить у модели исправленный ответ
+                        print(f"[INFO] Запрашиваем исправленный ответ от модели...")
+                        try:
+                            # Формируем промпт с просьбой исправить XML
+                            correction_prompt = f"""Предыдущий ответ содержал ошибки в XML формате. Исправь XML и верни только валидный XML без пояснений.
+
+Ошибка: {str(e)}
+
+Исправленный XML:"""
+                            
+                            correction_response = self.ollama_client.generate(
+                                user_prompt=correction_prompt + "\n\n" + response_text[:2000],  # Первые 2000 символов для контекста
+                                system_prompt="Ты - система обработки XML. Исправь ошибки в XML и верни только валидный XML.",
+                                image_paths=[image_path],
+                                model="qwen3-vl:2b-instruct",
+                                timeout=300,
+                                max_retries=2
+                            )
+                            
+                            # Извлекаем исправленный ответ
+                            correction_text = ""
+                            if 'message' in correction_response and isinstance(correction_response['message'], dict):
+                                correction_text = correction_response['message'].get('content', '')
+                            elif 'response' in correction_response:
+                                correction_text = correction_response['response']
+                            
+                            if correction_text:
+                                print(f"[INFO] Получен исправленный ответ, длина: {len(correction_text)}")
+                                response_text = correction_text
+                                continue  # Пробуем снова с исправленным ответом
+                            else:
+                                print(f"[WARNING] Не удалось получить исправленный ответ")
+                                
+                        except Exception as correction_error:
+                            print(f"[WARNING] Ошибка при запросе исправления: {correction_error}")
+                    
+                    # Если это последняя попытка, выбрасываем ошибку
+                    if parse_attempt == max_parse_attempts:
+                        raise
+            
+            if blocks_data is None:
+                raise XMLParseError(f"Не удалось распарсить XML после {max_parse_attempts} попыток: {last_error}")
             
             # Сохраняем данные в БД
             for block_data in blocks_data:

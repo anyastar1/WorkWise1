@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from typing import List, Dict, Optional, Tuple
 import re
 from datetime import datetime
+import html
 
 
 class XMLParseError(Exception):
@@ -17,29 +18,120 @@ def extract_xml_from_text(text: str) -> str:
     """
     Извлекает XML из текста, удаляя лишние символы и комментарии вне XML
     
+    Поддерживает:
+    - XML в markdown блоках кода (```xml ... ```)
+    - XML с пояснениями до/после
+    - CDATA секции для программного кода
+    
     Args:
         text: Текст ответа от модели
         
     Returns:
         Очищенный XML
     """
+    # Удаляем markdown разметку, если есть
+    # Ищем XML в markdown блоках кода
+    markdown_xml_match = re.search(r'```(?:xml)?\s*(<page[^>]*>.*?</page>)', text, re.DOTALL | re.IGNORECASE)
+    if markdown_xml_match:
+        return markdown_xml_match.group(1)
+    
     # Ищем XML между тегами <page> и </page>
     xml_match = re.search(r'<page[^>]*>.*?</page>', text, re.DOTALL)
     if xml_match:
         return xml_match.group(0)
     
-    # Если не нашли, пробуем найти любой XML
-    xml_match = re.search(r'<[^>]+>.*?</[^>]+>', text, re.DOTALL)
-    if xml_match:
-        return xml_match.group(0)
+    # Если не нашли полный XML, пробуем найти начало и конец отдельно
+    # (модель могла добавить пояснения внутри)
+    page_start = re.search(r'<page[^>]*>', text, re.IGNORECASE)
+    page_end = re.search(r'</page>', text, re.IGNORECASE)
+    
+    if page_start and page_end:
+        # Берем текст от начала до конца, но ищем закрывающие теги правильно
+        start_pos = page_start.start()
+        # Ищем последний </page>
+        end_pos = page_end.end()
+        
+        # Проверяем, что между ними есть правильная структура
+        potential_xml = text[start_pos:end_pos]
+        
+        # Подсчитываем открывающие и закрывающие теги page
+        open_count = potential_xml.count('<page')
+        close_count = potential_xml.count('</page>')
+        
+        if open_count == close_count:
+            return potential_xml
     
     # Если ничего не найдено, возвращаем весь текст
     return text
 
 
+def _escape_code_in_xml(xml_string: str) -> str:
+    """
+    Экранирует специальные символы в тексте внутри тегов <text>,
+    которые могут содержать программный код (Python, Java и т.д.)
+    
+    Обрабатывает:
+    - Символы <, >, & в коде Python/Java
+    - CDATA секции (оставляет как есть)
+    - Вложенные теги в тексте
+    
+    Args:
+        xml_string: XML строка
+        
+    Returns:
+        XML с экранированным кодом
+    """
+    # Паттерн для поиска содержимого тегов <text>
+    # Ищем <text ...>содержимое</text> с учетом возможных вложенных тегов
+    pattern = r'(<text[^>]*>)(.*?)(</text>)'
+    
+    def replace_text(match):
+        start_tag = match.group(1)
+        content = match.group(2)
+        end_tag = match.group(3)
+        
+        # Если уже есть CDATA, не трогаем
+        if '<![CDATA[' in content and ']]>' in content:
+            return match.group(0)
+        
+        # Проверяем, не содержит ли текст незакрытые теги (это может быть код)
+        # Если есть символы < или >, но нет парных тегов, это скорее всего код
+        open_brackets = content.count('<')
+        close_brackets = content.count('>')
+        
+        # Если количество открывающих и закрывающих скобок не совпадает,
+        # или есть < без соответствующего >, это может быть код
+        if open_brackets != close_brackets or (open_brackets > 0 and not re.search(r'<[^>]+>', content)):
+            # Экранируем все специальные XML символы
+            escaped_content = html.escape(content)
+            return start_tag + escaped_content + end_tag
+        
+        # Если есть валидные XML теги внутри, проверяем их структуру
+        # Если структура валидна, оставляем как есть
+        # Иначе экранируем
+        try:
+            # Пробуем распарсить содержимое как XML фрагмент
+            test_xml = f"<root>{content}</root>"
+            ET.fromstring(test_xml)
+            # Если успешно, значит это валидный XML, не трогаем
+            return match.group(0)
+        except:
+            # Если не валидный XML, экранируем
+            escaped_content = html.escape(content)
+            return start_tag + escaped_content + end_tag
+    
+    # Заменяем содержимое всех тегов <text>
+    xml_string = re.sub(pattern, replace_text, xml_string, flags=re.DOTALL)
+    
+    return xml_string
+
+
 def parse_page_xml(xml_string: str, page_number: int) -> List[Dict]:
     """
     Парсит XML ответ от Ollama и возвращает структурированные данные
+    
+    Поддерживает обработку программного кода внутри тегов <text>
+    (Python, Java и другие языки с символами <, >, &)
     
     Args:
         xml_string: XML строка от модели
@@ -72,6 +164,9 @@ def parse_page_xml(xml_string: str, page_number: int) -> List[Dict]:
         # Извлекаем XML из текста
         xml_string = extract_xml_from_text(xml_string)
         
+        # Экранируем специальные символы в тексте (для программного кода)
+        xml_string = _escape_code_in_xml(xml_string)
+        
         # Парсим XML
         root = ET.fromstring(xml_string)
         
@@ -99,8 +194,31 @@ def parse_page_xml(xml_string: str, page_number: int) -> List[Dict]:
             
             # Обрабатываем текстовые элементы
             for text_elem in block_elem.findall('text'):
+                # Получаем весь текст элемента, включая дочерние узлы
+                # ElementTree автоматически обрабатывает экранированные символы
+                text_parts = []
+                
+                # Добавляем основной текст
+                if text_elem.text:
+                    text_parts.append(text_elem.text)
+                
+                # Добавляем текст из дочерних элементов (если есть)
+                for child in text_elem:
+                    if child.text:
+                        text_parts.append(child.text)
+                    # Добавляем tail (текст после дочернего элемента)
+                    if child.tail:
+                        text_parts.append(child.tail)
+                
+                # Объединяем все части
+                text_content = ''.join(text_parts)
+                
+                # Декодируем HTML entities обратно в обычный текст
+                # Это вернет исходные символы <, >, & из программного кода
+                text_content = html.unescape(text_content).strip()
+                
                 text_data = {
-                    'text': (text_elem.text or '').strip(),
+                    'text': text_content,
                     'font_family': text_elem.get('font-family', ''),
                     'font_size': _parse_float(text_elem.get('font-size')),
                     'color': text_elem.get('color', ''),
