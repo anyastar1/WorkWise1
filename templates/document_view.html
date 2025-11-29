@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Документ {{ document.id }}</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .document-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+      }
+      
+      .document-header {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+      
+      .document-title {
+        color: var(--color-text-main, #b6d4cf);
+        margin-bottom: 10px;
+      }
+      
+      .document-info {
+        color: var(--color-text-main, #b6d4cf);
+        font-size: 14px;
+        opacity: 0.8;
+      }
+      
+      .back-button {
+        display: inline-block;
+        padding: 10px 20px;
+        background: var(--color-accent-primary, #339989);
+        color: white;
+        text-decoration: none;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        transition: background 0.3s;
+      }
+      
+      .back-button:hover {
+        background: #2a7a6e;
+      }
+      
+      .pages-list {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      
+      .page-item {
+        background: var(--color-box-background, #339989);
+        padding: 20px;
+        border-radius: 10px;
+      }
+      
+      .page-number {
+        color: white;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        text-align: center;
+      }
+      
+      .page-image {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        display: block;
+        margin: 0 auto;
+      }
+      
+      @media (max-width: 768px) {
+        .document-container {
+          margin: 10px;
+          padding: 10px;
+        }
+        
+        .page-item {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="documentPage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
+      </nav>
+
+      <main class="document-container">
+        <a href="{{ url_for('main.welcome') }}" class="back-button">← Назад</a>
+
+        <div class="document-header">
+          <h1 class="document-title">Ваш документ {{ document.id }}</h1>
+          <div class="document-info">
+            Тип: {{ document.file_type }} | 
+            Операция: {{ document.operation_type }} | 
+            Загружен: {{ document.created_at.strftime('%d.%m.%Y %H:%M') }}
+          </div>
+        </div>
+
+        <div class="pages-list">
+          {% for page in pages %}
+            <div class="page-item">
+              <div class="page-number">Страница {{ page.page_number }}</div>
+              <img
+                src="{{ url_for('main.uploaded_file', filename=page.image_path) }}"
+                alt="Страница {{ page.page_number }}"
+                class="page-image"
+              />
+            </div>
+          {% endfor %}
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="{{ url_for('main.welcome') }}" class="back-button">← Вернуться на главную</a>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

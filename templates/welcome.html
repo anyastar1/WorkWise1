@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Добро пожаловать</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+    <style>
+      .welcome-container {
+        max-width: 600px;
+        margin: 40px auto;
+        padding: 20px;
+      }
+      
+      .welcome-title {
+        text-align: center;
+        margin-bottom: 30px;
+        color: var(--color-text-main, #b6d4cf);
+      }
+      
+      .upload-section {
+        background: var(--color-box-background, #339989);
+        padding: 30px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+      }
+      
+      .upload-button-wrapper {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      
+      .upload-btn {
+        min-width: 300px;
+        padding: 15px 30px;
+        background: var(--color-accent-primary, #339989);
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      
+      .upload-btn:hover {
+        background: #2a7a6e;
+      }
+      
+      .upload-btn:disabled {
+        background: #666;
+        cursor: not-allowed;
+      }
+      
+      .file-input-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 20px;
+      }
+      
+      .file-input {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+      }
+      
+      .file-label {
+        display: inline-block;
+        padding: 15px 30px;
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        transition: all 0.3s;
+      }
+      
+      .file-label:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.5);
+      }
+      
+      .file-name {
+        margin-top: 10px;
+        color: white;
+        font-size: 14px;
+      }
+      
+      .operation-select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 5px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+        font-size: 16px;
+        margin-bottom: 20px;
+      }
+      
+      .operation-select option {
+        background: #339989;
+        color: white;
+      }
+      
+      .progress-bar-wrapper {
+        display: none;
+        margin-top: 20px;
+      }
+      
+      .progress-bar {
+        width: 100%;
+        height: 30px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        overflow: hidden;
+      }
+      
+      .progress-bar-fill {
+        height: 100%;
+        background: #4caf50;
+        width: 0%;
+        transition: width 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+      }
+      
+      .logout-link {
+        text-align: center;
+        margin-top: 20px;
+      }
+      
+      .logout-link a {
+        color: var(--color-link, #ffeaea);
+        text-decoration: none;
+      }
+      
+      @media (max-width: 768px) {
+        .welcome-container {
+          margin: 20px;
+          padding: 10px;
+        }
+        
+        .upload-btn {
+          min-width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="welcomePage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
+      </nav>
+
+      <main class="welcome-container">
+        <h1 class="welcome-title">Добро пожаловать, {{ user.login }}!</h1>
+
+        <!-- Flash сообщения -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div style="margin-bottom: 20px">
+              {% for category, message in messages %}
+                <div
+                  style="padding: 10px; border-radius: 5px; font-size: 14px; margin-bottom: 5px; 
+                        {% if category == 'error' %}background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336;
+                        {% else %}background: rgba(76, 175, 80, 0.1); color: #4caf50; border: 1px solid #4caf50;{% endif %}"
+                >
+                  {{ message }}
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <div class="upload-section">
+          <form
+            id="uploadForm"
+            method="POST"
+            action="{{ url_for('main.upload_document') }}"
+            enctype="multipart/form-data"
+          >
+            <div class="file-input-wrapper">
+              <input
+                type="file"
+                id="fileInput"
+                name="file"
+                class="file-input"
+                accept=".pdf,.docx"
+                required
+              />
+              <label for="fileInput" class="file-label">
+                Выберите файл (PDF или DOCX)
+              </label>
+              <div id="fileName" class="file-name"></div>
+            </div>
+
+            <select
+              name="operation_type"
+              id="operationType"
+              class="operation-select"
+              required
+            >
+              <option value="Проверить на соответствие структуры">
+                Проверить на соответствие структуры
+              </option>
+              <option value="Проверить ссылки на источники">
+                Проверить ссылки на источники
+              </option>
+            </select>
+
+            <div class="upload-button-wrapper">
+              <button type="submit" class="upload-btn" id="uploadBtn">
+                Загрузить документ
+              </button>
+            </div>
+
+            <div class="progress-bar-wrapper" id="progressWrapper">
+              <div class="progress-bar">
+                <div class="progress-bar-fill" id="progressFill">
+                  Загрузка...
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div class="logout-link">
+          <a href="{{ url_for('auth.logout') }}">Выйти</a>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const fileInput = document.getElementById("fileInput");
+      const fileName = document.getElementById("fileName");
+      const uploadForm = document.getElementById("uploadForm");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const progressWrapper = document.getElementById("progressWrapper");
+      const progressFill = document.getElementById("progressFill");
+
+      // Отображение имени выбранного файла
+      fileInput.addEventListener("change", function (e) {
+        if (e.target.files.length > 0) {
+          fileName.textContent = "Выбран файл: " + e.target.files[0].name;
+        } else {
+          fileName.textContent = "";
+        }
+      });
+
+      // Обработка отправки формы
+      uploadForm.addEventListener("submit", function (e) {
+        const file = fileInput.files[0];
+        
+        if (!file) {
+          e.preventDefault();
+          alert("Пожалуйста, выберите файл");
+          return;
+        }
+
+        // Проверка размера файла (50 МБ)
+        const maxSize = 50 * 1024 * 1024;
+        if (file.size > maxSize) {
+          e.preventDefault();
+          alert("Файл слишком большой (максимум 50 МБ)");
+          return;
+        }
+
+        // Показываем индикатор загрузки
+        uploadBtn.disabled = true;
+        progressWrapper.style.display = "block";
+        
+        // Симуляция прогресса (в реальности это будет обрабатываться на сервере)
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += 10;
+          if (progress <= 90) {
+            progressFill.style.width = progress + "%";
+            progressFill.textContent = "Обработка... " + progress + "%";
+          }
+        }, 200);
+
+        // Очистка интервала после отправки (форма отправится автоматически)
+        setTimeout(() => {
+          clearInterval(interval);
+        }, 5000);
+      });
+    </script>
+  </body>
+</html>

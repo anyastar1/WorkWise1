@@ -9,9 +9,11 @@ from sqlalchemy import (
     String,
     Boolean,
     ForeignKey,
+    DateTime,
 )
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 import hashlib
 import os
 
@@ -66,6 +68,40 @@ class User(Base):
         return (
             self.password_hash == hashlib.sha256(password.encode("utf-8")).hexdigest()
         )
+    
+    documents = relationship("Document", back_populates="user")
+
+
+class Document(Base):
+    """Модель документа"""
+    __tablename__ = "documents"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    file_type = Column(String(10), nullable=False)  # 'PDF' или 'DOCX'
+    operation_type = Column(String(100), nullable=False)  # Тип операции
+    hash = Column(String(64), nullable=False, unique=True)  # SHA-256 хеш
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    user = relationship("User", back_populates="documents")
+    pages = relationship("Page", back_populates="document", cascade="all, delete-orphan")
+    
+    def __repr__(self):
+        return f"<Document(id={self.id}, file_type='{self.file_type}')>"
+
+
+class Page(Base):
+    """Модель страницы документа"""
+    __tablename__ = "pages"
+    id = Column(Integer, primary_key=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    page_number = Column(Integer, nullable=False)
+    image_path = Column(String(500), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    
+    document = relationship("Document", back_populates="pages")
+    
+    def __repr__(self):
+        return f"<Page(document_id={self.document_id}, page_number={self.page_number})>"
 
 
 # Управление сессиями базы данных

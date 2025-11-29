@@ -52,10 +52,7 @@ def login():
                 session["user_id"] = user.id
                 session["client_type"] = user.client_type
                 flash(f"Добро пожаловать, {user.login}!", "success")
-                if user.client_type == "company":
-                    return redirect(url_for("main.lk_company"))
-                else:
-                    return redirect(url_for("main.lk_private"))
+                return redirect(url_for("main.welcome"))
             else:
                 flash("Неверный ключ компании.", "error")
         else:
