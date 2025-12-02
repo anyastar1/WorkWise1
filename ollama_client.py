@@ -5,9 +5,8 @@
 Использование:
     from ollama_client import OllamaClient
     
-    # Создание клиента
+    # Создание клиента (base_url будет взят из переменной окружения OLLAMA_BASE_URL)
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )
@@ -39,6 +38,10 @@ from pathlib import Path
 from typing import List, Optional, Dict, Any
 import requests
 from datetime import datetime
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
 class OllamaClient:
@@ -49,7 +52,7 @@ class OllamaClient:
     
     def __init__(
         self,
-        base_url: str = "http://192.168.1.250:11434",
+        base_url: Optional[str] = None,
         model: str = "qwen3-vl:2b-instruct",
         log_file: Optional[str] = "ollama_logs.log"
     ):
@@ -57,10 +60,12 @@ class OllamaClient:
         Инициализация клиента Ollama.
         
         Args:
-            base_url: Базовый URL сервера Ollama
+            base_url: Базовый URL сервера Ollama (если не указан, берется из переменной окружения OLLAMA_BASE_URL)
             model: Название модели для использования
             log_file: Путь к файлу для логирования (None для отключения логирования в файл)
         """
+        if base_url is None:
+            base_url = os.getenv("OLLAMA_BASE_URL", "http://192.168.1.250:11434")
         self.base_url = base_url.rstrip('/')
         self.model = model
         self.api_url = f"{self.base_url}/api/chat"
@@ -329,9 +334,8 @@ class OllamaClient:
 
 # Пример использования
 if __name__ == "__main__":
-    # Создание клиента
+    # Создание клиента (base_url будет взят из переменной окружения OLLAMA_BASE_URL)
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )

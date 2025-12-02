@@ -3,9 +3,13 @@
 """
 
 import logging
+from dotenv import load_dotenv
 from flask import Flask, g
 from database import initialize_database
 from config import SECRET_KEY
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 # Настройка логирования
 logging.basicConfig(

@@ -2,7 +2,12 @@
 Пример использования модуля ollama_client.py
 """
 
+import os
+from dotenv import load_dotenv
 from ollama_client import OllamaClient
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 
 def example_basic_text():
@@ -11,9 +16,8 @@ def example_basic_text():
     print("Пример 1: Текстовый запрос")
     print("=" * 80)
     
-    # Создание клиента
+    # Создание клиента (base_url будет взят из переменной окружения OLLAMA_BASE_URL)
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )
@@ -34,7 +38,6 @@ def example_with_image():
     print("=" * 80)
     
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )
@@ -63,7 +66,6 @@ def example_multiple_images():
     print("=" * 80)
     
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )
@@ -94,7 +96,6 @@ def example_full_response():
     print("=" * 80)
     
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct",
         log_file="ollama_logs.log"
     )

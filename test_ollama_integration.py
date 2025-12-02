@@ -9,6 +9,10 @@
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Загружаем переменные окружения из .env файла
+load_dotenv()
 
 # Добавляем текущую директорию в путь
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -47,7 +51,6 @@ def test_ollama_client_initialization():
     print("=" * 60)
     
     client = OllamaClient(
-        base_url="http://192.168.1.250:11434",
         model="qwen3-vl:2b-instruct"
     )
     
