@@ -179,7 +179,7 @@ tramp
 *.db
 *.sqlite
 *.sqlite3
-workwise.db
+aikor.db
 *.db-journal
 
 # Загруженные файлы пользователей

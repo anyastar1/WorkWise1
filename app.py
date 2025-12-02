@@ -1,5 +1,5 @@
 """
-Главный файл приложения WorkWise
+Главный файл приложения Айкор
 """
 
 import logging
@@ -16,7 +16,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('workwise.log', encoding='utf-8'),
+        logging.FileHandler('aikor.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -52,7 +52,7 @@ def teardown_request(exception):
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print("🚀 Запуск WorkWise Application")
+    print("🚀 Запуск Айкор Application")
     print("=" * 60)
     initialize_database()
     

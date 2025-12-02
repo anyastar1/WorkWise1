@@ -22,7 +22,7 @@ import hashlib
 import os
 
 # Инициализация базы данных
-DATABASE_URL = "sqlite:///workwise.db"
+DATABASE_URL = "sqlite:///aikor.db"
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
@@ -191,7 +191,7 @@ def initialize_database():
     global engine, Session
 
     # Удаляем старый файл БД, если он есть (для разработки)
-    db_file_path = "workwise.db"
+    db_file_path = "aikor.db"
     if os.path.exists(db_file_path):
         print(f"Обнаружен старый файл БД '{db_file_path}'. Удаляю для чистого старта...")
         try:
