@@ -278,19 +278,28 @@
 
                 {% if document.is_checked and page_data.errors_image_url %}
                 <div class="toggle-view">
-                    <button class="toggle-btn active" onclick="showOriginal({{ page_data.page.page_number }})">Оригинал</button>
-                    <button class="toggle-btn" onclick="showErrors({{ page_data.page.page_number }})">С ошибками</button>
+                    <button class="toggle-btn" onclick="showOriginal({{ page_data.page.page_number }})">Оригинал</button>
+                    <button class="toggle-btn active" onclick="showErrors({{ page_data.page.page_number }})">С ошибками</button>
                 </div>
                 {% endif %}
 
                 <div class="page-image-container">
-                    <img src="{{ page_data.image_url }}" 
+                    {# По умолчанию показываем изображение с ошибками, если оно есть #}
+                    <img src="{{ page_data.errors_image_url if (document.is_checked and page_data.errors_image_url) else page_data.image_url }}" 
                          alt="Страница {{ page_data.page.page_number }}" 
                          class="page-image"
                          id="page-img-{{ page_data.page.page_number }}"
                          data-original="{{ page_data.image_url }}"
                          data-errors="{{ page_data.errors_image_url or '' }}">
                 </div>
+                
+                {# Отладочная информация #}
+                {% if document.is_checked %}
+                <div style="font-size: 11px; color: #888; margin-top: 5px;">
+                    Оригинал: {{ page_data.image_url }}<br>
+                    С ошибками: {{ page_data.errors_image_url or 'не создано' }}
+                </div>
+                {% endif %}
 
                 {% if page_data.errors %}
                 <div class="errors-list">

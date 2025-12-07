@@ -75,14 +75,31 @@ class ErrorRenderer:
         Returns:
             str: Путь к изображению с ошибками
         """
+        print(f"[ErrorRenderer] Rendering {len(errors)} errors on page {page.page_number}")
+        print(f"[ErrorRenderer] Image path: {page.image_path}")
+        
+        # Проверяем существование файла
+        if not os.path.exists(page.image_path):
+            print(f"[ErrorRenderer] ERROR: Image file not found: {page.image_path}")
+            return page.image_path
+        
         # Загружаем исходное изображение
         image = Image.open(page.image_path)
         draw = ImageDraw.Draw(image)
         
+        print(f"[ErrorRenderer] Image size: {image.size}")
+        
         # Рисуем каждую ошибку
+        errors_drawn = 0
         for error in errors:
             if error.bbox_x0 is not None:
+                print(f"[ErrorRenderer] Drawing error #{error.error_number}: bbox=({error.bbox_x0:.1f}, {error.bbox_y0:.1f}, {error.bbox_x1:.1f}, {error.bbox_y1:.1f})")
                 self._draw_error(draw, error)
+                errors_drawn += 1
+            else:
+                print(f"[ErrorRenderer] Skipping error #{error.error_number}: no bbox")
+        
+        print(f"[ErrorRenderer] Drew {errors_drawn} errors")
         
         # Определяем путь для сохранения
         if output_path is None:
@@ -96,6 +113,8 @@ class ErrorRenderer:
         
         # Сохраняем
         image.save(output_path)
+        print(f"[ErrorRenderer] Saved to: {output_path}")
+        
         return output_path
     
     def _draw_error(self, draw: ImageDraw.Draw, error: DocumentError):
@@ -106,32 +125,67 @@ class ErrorRenderer:
         x1 = error.bbox_x1 * self.scale_factor
         y1 = error.bbox_y1 * self.scale_factor
         
+        # Проверяем валидность координат
+        if x1 <= x0 or y1 <= y0:
+            print(f"[WARN] Invalid bbox for error {error.error_number}: ({x0}, {y0}) - ({x1}, {y1})")
+            return
+        
         # Получаем цвет
         color = self.SEVERITY_COLORS.get(error.severity, self.SEVERITY_COLORS['warning'])
         
-        # Рисуем прямоугольник
-        for i in range(self.LINE_WIDTH):
+        # Полупрозрачная заливка (создаём отдельный слой)
+        # Рисуем прямоугольник с толстой рамкой
+        for i in range(self.LINE_WIDTH + 2):
             draw.rectangle(
                 [(x0 - i, y0 - i), (x1 + i, y1 + i)],
                 outline=color
             )
         
-        # Рисуем номер ошибки
+        # Рисуем подчёркивание под текстом (волнистая линия)
+        underline_y = y1 + 2
+        wave_height = 3
+        step = 4
+        points = []
+        x = x0
+        up = True
+        while x <= x1:
+            points.append((x, underline_y + (0 if up else wave_height)))
+            x += step
+            up = not up
+        
+        if len(points) > 1:
+            for i in range(len(points) - 1):
+                draw.line([points[i], points[i + 1]], fill=color, width=2)
+        
+        # Рисуем номер ошибки в кружке
         label = str(error.error_number)
         
-        # Фон для номера
-        label_x = x0 - 5
-        label_y = y0 - self.FONT_SIZE - 5
+        # Позиция метки - слева сверху от блока
+        label_x = max(5, x0 - 5)
+        label_y = max(5, y0 - self.FONT_SIZE - 10)
         
         # Размер текста
-        bbox = draw.textbbox((label_x, label_y), label, font=self._font)
-        padding = 3
+        try:
+            bbox = draw.textbbox((label_x, label_y), label, font=self._font)
+        except:
+            # Fallback для старых версий Pillow
+            text_width = len(label) * 10
+            text_height = self.FONT_SIZE
+            bbox = (label_x, label_y, label_x + text_width, label_y + text_height)
         
-        # Прямоугольник-фон для номера
-        draw.rectangle(
-            [(bbox[0] - padding, bbox[1] - padding),
-             (bbox[2] + padding, bbox[3] + padding)],
-            fill=color
+        padding = 5
+        
+        # Круглый фон для номера
+        circle_x = label_x + (bbox[2] - bbox[0]) // 2
+        circle_y = label_y + (bbox[3] - bbox[1]) // 2
+        radius = max((bbox[2] - bbox[0]) // 2, (bbox[3] - bbox[1]) // 2) + padding
+        
+        draw.ellipse(
+            [(circle_x - radius, circle_y - radius),
+             (circle_x + radius, circle_y + radius)],
+            fill=color,
+            outline=(255, 255, 255),
+            width=2
         )
         
         # Текст номера
@@ -140,6 +194,13 @@ class ErrorRenderer:
             label,
             fill=(255, 255, 255),
             font=self._font
+        )
+        
+        # Линия от номера к области ошибки
+        draw.line(
+            [(circle_x, circle_y + radius), (x0, y0)],
+            fill=color,
+            width=2
         )
     
     def render_all_pages(self, document: Document) -> List[str]:

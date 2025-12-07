@@ -90,15 +90,29 @@ def view(doc_id):
         flash("Документ не найден", "error")
         return redirect(url_for('main.dashboard'))
     
+    print(f"[VIEW] Document {doc_id}: is_checked={document.is_checked}, errors={len(document.errors)}")
+    
     # Получаем страницы с ошибками
     pages_data = []
     for page in document.pages:
         page_errors = [e for e in document.errors if e.page_id == page.id]
+        
+        errors_url = None
+        if page.image_with_errors_path:
+            print(f"[VIEW] Page {page.page_number}: image_with_errors_path={page.image_with_errors_path}")
+            if os.path.exists(page.image_with_errors_path):
+                errors_url = get_page_errors_image_url(page)
+                print(f"[VIEW] Page {page.page_number}: errors_url={errors_url}")
+            else:
+                print(f"[VIEW] Page {page.page_number}: ERROR file not found!")
+        else:
+            print(f"[VIEW] Page {page.page_number}: no image_with_errors_path")
+        
         pages_data.append({
             'page': page,
             'errors': page_errors,
             'image_url': get_page_image_url(page),
-            'errors_image_url': get_page_errors_image_url(page) if page.image_with_errors_path else None
+            'errors_image_url': errors_url
         })
     
     return render_template(
@@ -135,13 +149,43 @@ def check_document(doc_id):
                 'error': result.get('error', 'Ошибка проверки')
             }), 400
         
+        # Коммитим чтобы ошибки сохранились
+        g.db_session.commit()
+        
         # Перезагружаем документ для получения обновлённых данных
-        g.db_session.refresh(document)
+        g.db_session.expire_all()
+        document = g.db_session.query(Document).filter_by(id=doc_id).first()
+        
+        # Загружаем ошибки явно
+        errors = g.db_session.query(DocumentError).filter_by(document_id=doc_id).all()
+        
+        print(f"[DEBUG] Document {doc_id}: found {len(errors)} errors")
         
         # Рендерим ошибки на изображениях
-        if document.errors:
+        if errors:
             renderer = ErrorRenderer()
-            renderer.render_all_pages(document)
+            
+            # Группируем ошибки по страницам
+            errors_by_page = {}
+            for error in errors:
+                if error.page_id not in errors_by_page:
+                    errors_by_page[error.page_id] = []
+                errors_by_page[error.page_id].append(error)
+            
+            # Рендерим каждую страницу
+            for page in document.pages:
+                page_errors = errors_by_page.get(page.id, [])
+                print(f"[DEBUG] Page {page.page_number}: {len(page_errors)} errors")
+                
+                if page_errors:
+                    # Проверяем что есть координаты хотя бы у одной ошибки
+                    errors_with_bbox = [e for e in page_errors if e.bbox_x0 is not None]
+                    print(f"[DEBUG] Page {page.page_number}: {len(errors_with_bbox)} errors with bbox")
+                    
+                    if errors_with_bbox:
+                        output_path = renderer.render_errors_on_page(page, page_errors)
+                        page.image_with_errors_path = output_path
+                        print(f"[DEBUG] Rendered errors to: {output_path}")
         
         # Сохраняем пути к изображениям с ошибками
         g.db_session.commit()
