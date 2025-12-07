@@ -42,7 +42,6 @@
 
         <div class="divider"></div>
 
-        <!-- Добавлен method и action -->
         <form
           id="registrationForm"
           method="POST"
@@ -99,14 +98,13 @@
           <div class="form-group">
             <label class="form-label">Тип деятельности</label>
             <div class="select-wrapper">
-              <!-- Добавлен name="activity_type" -->
               <select class="form-select" name="activity_type" required>
                 <option value="" disabled selected>
                   Выберите тип деятельности
                 </option>
                 <option value="student">Студент</option>
-                <option value="energy">Научный исследователь</option>
-                <option value="oil">Инженер</option>
+                <option value="researcher">Научный исследователь</option>
+                <option value="engineer">Инженер</option>
               </select>
             </div>
           </div>
@@ -114,7 +112,6 @@
           <div class="form-group">
             <label class="form-label">Тип клиента</label>
             <div class="select-wrapper">
-              <!-- Добавлен name="client_type" -->
               <select
                 class="form-select"
                 id="clientType"
@@ -144,8 +141,6 @@
           </button>
 
           <div class="bottom-links">
-            <a href="#" class="bottom-link">FAQ</a>
-            <a href="#" class="bottom-link">Помощь</a>
             <a href="{{ url_for('auth.login') }}" class="bottom-link">Вход</a>
           </div>
         </form>
@@ -159,7 +154,7 @@
     </div>
 
     <script>
-      // Анимация фона (ваш код)
+      // Анимация фона
       const textBackground = document.getElementById("textBackground");
       const words = [
         "TEXT",
@@ -210,7 +205,7 @@
           }
         });
 
-      // ВАЖНОЕ ИЗМЕНЕНИЕ: Валидация перед отправкой на сервер
+      // Валидация перед отправкой на сервер
       document
         .getElementById("registrationForm")
         .addEventListener("submit", function (e) {
@@ -220,24 +215,11 @@
           ).value;
 
           if (password !== confirmPassword) {
-            e.preventDefault(); // Останавливаем отправку только при ошибке
+            e.preventDefault();
             alert("Пароли не совпадают!");
             return;
           }
-
-          // Если всё ок, скрипт НЕ делает preventDefault(),
-          // и форма улетает на сервер в app.py
         });
-
-      document.querySelectorAll(".bottom-link").forEach((link) => {
-        link.addEventListener("click", function (e) {
-          const href = this.getAttribute("href");
-          if (href === "#") {
-            e.preventDefault();
-            alert("Переход на: " + this.textContent);
-          }
-        });
-      });
     </script>
   </body>
 </html>

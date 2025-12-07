@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WorkWise - Личный кабинет</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+  <body>
+    <div id="lkPage">
+      <nav class="top-nav">
+        <div class="nav-left">
+          <span class="logo">WorkWise</span>
+        </div>
+        <div class="nav-links"></div>
+        <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
+      </nav>
+
+      <main class="main-content" style="margin-left: 0;">
+        <div class="welcome-section">
+          <h1 class="welcome-text">Добро пожаловать, {{ user.login }}!</h1>
+          <p class="welcome-subtitle">Вы успешно авторизованы в системе WorkWise</p>
+        </div>
+
+        <div class="dashboard-container">
+          <div class="user-info-card">
+            <h2>Информация о пользователе</h2>
+            <div class="info-row">
+              <span class="info-label">Логин:</span>
+              <span class="info-value">{{ user.login }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Email:</span>
+              <span class="info-value">{{ user.email }}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Тип аккаунта:</span>
+              <span class="info-value">{{ 'Компания' if user.client_type == 'company' else 'Частный' }}</span>
+            </div>
+            {% if user.activity_type %}
+            <div class="info-row">
+              <span class="info-label">Деятельность:</span>
+              <span class="info-value">{{ user.activity_type }}</span>
+            </div>
+            {% endif %}
+            {% if user.company %}
+            <div class="info-row">
+              <span class="info-label">Компания:</span>
+              <span class="info-value">{{ user.company.name }}</span>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="logout-section">
+          <a href="{{ url_for('auth.logout') }}" class="logout-btn-main">Выйти из системы</a>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

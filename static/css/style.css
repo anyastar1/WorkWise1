@@ -1844,3 +1844,81 @@ input:checked + .slider:before {
   margin-top: 15px;
   text-align: center;
 }
+
+/* --- Стили для приветственной страницы (dashboard) --- */
+.welcome-subtitle {
+  font-size: 18px;
+  color: var(--color-secondary-text);
+  margin-top: 10px;
+  font-weight: 300;
+}
+
+.dashboard-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px 20px;
+}
+
+.user-info-card {
+  background-color: var(--color-main-content-bg);
+  border-radius: 20px;
+  padding: 30px 40px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(51, 153, 137, 0.3);
+}
+
+.user-info-card h2 {
+  font-size: 22px;
+  color: var(--color-accent-primary);
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid var(--color-accent-primary);
+  font-weight: 500;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(182, 212, 207, 0.1);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: var(--color-secondary-text);
+  font-weight: 500;
+}
+
+.info-value {
+  color: var(--color-text-main);
+  font-weight: 400;
+}
+
+.logout-section {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.logout-btn-main {
+  background-color: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+  border: 1px solid #f44336;
+  padding: 12px 40px;
+  border-radius: 25px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  font-size: 16px;
+}
+
+.logout-btn-main:hover {
+  background-color: rgba(244, 67, 54, 0.3);
+  transform: translateY(-2px);
+}
