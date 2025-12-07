@@ -11,7 +11,7 @@ from typing import Union, BinaryIO, List, Dict, Optional
 import hashlib
 
 from .base import BaseParser
-from src.models.document import (
+from ..models.document import (
     ParsedDocument,
     DocumentMetadata,
     DocumentType,
@@ -24,7 +24,7 @@ from src.models.document import (
     TextStyle,
     BoundingBox,
 )
-from src.utils.color_utils import int_to_hex
+from ..utils.color_utils import int_to_hex
 
 
 class PDFParser(BaseParser):

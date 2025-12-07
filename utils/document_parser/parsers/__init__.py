@@ -10,7 +10,7 @@ from typing import Union, BinaryIO, Optional
 from .base import BaseParser
 from .pdf_parser import PDFParser
 from .docx_parser import DOCXParser
-from src.models.document import ParsedDocument
+from ..models.document import ParsedDocument
 
 
 class ParserFactory:

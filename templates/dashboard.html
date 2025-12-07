@@ -1,68 +1,297 @@
 <!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WorkWise - Личный кабинет</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='css/style.css') }}"
-    />
-  </head>
-  <body>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .upload-zone {
+            border: 3px dashed var(--color-accent-primary);
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(51, 153, 137, 0.05);
+            margin-bottom: 30px;
+        }
+        .upload-zone:hover, .upload-zone.dragover {
+            background: rgba(51, 153, 137, 0.15);
+            border-color: #5fa99b;
+        }
+        .upload-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .upload-text {
+            font-size: 20px;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        .upload-hint {
+            color: var(--color-secondary-text);
+            font-size: 14px;
+        }
+        .progress-container {
+            display: none;
+            margin-top: 20px;
+        }
+        .progress-bar {
+            height: 10px;
+            background: rgba(51, 153, 137, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--color-accent-primary);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .progress-text {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+        .documents-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .document-card {
+            background: var(--color-main-content-bg);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(51, 153, 137, 0.3);
+            transition: all 0.3s ease;
+        }
+        .document-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--color-accent-primary);
+        }
+        .document-title {
+            font-weight: 500;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+        .document-meta {
+            font-size: 13px;
+            color: var(--color-secondary-text);
+            margin-bottom: 15px;
+        }
+        .document-rating {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .rating-high { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+        .rating-medium { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .rating-low { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        .rating-pending { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+        .document-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+        .btn-view {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            background: var(--color-accent-primary);
+            color: white;
+        }
+        .btn-view:hover {
+            background: #2a7e71;
+        }
+        .section-title {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--color-text-main);
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--color-secondary-text);
+        }
+        #fileInput {
+            display: none;
+        }
+    </style>
+</head>
+<body>
     <div id="lkPage">
-      <nav class="top-nav">
-        <div class="nav-left">
-          <span class="logo">WorkWise</span>
-        </div>
-        <div class="nav-links"></div>
-        <div class="user-info-nav">{{ user.login if user else 'Гость' }}</div>
-      </nav>
+        <nav class="top-nav">
+            <div class="nav-left">
+                <span class="logo">WorkWise</span>
+            </div>
+            <div class="user-info-nav">
+                {{ user.login }}
+                <a href="{{ url_for('auth.logout') }}" style="margin-left: 15px; color: inherit;">Выйти</a>
+            </div>
+        </nav>
 
-      <main class="main-content" style="margin-left: 0;">
-        <div class="welcome-section">
-          <h1 class="welcome-text">Добро пожаловать, {{ user.login }}!</h1>
-          <p class="welcome-subtitle">Вы успешно авторизованы в системе WorkWise</p>
-        </div>
+        <main class="main-content" style="margin-left: 0; max-width: 1200px; margin: 90px auto 0;">
+            <div class="welcome-section">
+                <h1 class="welcome-text">Добро пожаловать, {{ user.login }}!</h1>
+            </div>
 
-        <div class="dashboard-container">
-          <div class="user-info-card">
-            <h2>Информация о пользователе</h2>
-            <div class="info-row">
-              <span class="info-label">Логин:</span>
-              <span class="info-value">{{ user.login }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Email:</span>
-              <span class="info-value">{{ user.email }}</span>
-            </div>
-            <div class="info-row">
-              <span class="info-label">Тип аккаунта:</span>
-              <span class="info-value">{{ 'Компания' if user.client_type == 'company' else 'Частный' }}</span>
-            </div>
-            {% if user.activity_type %}
-            <div class="info-row">
-              <span class="info-label">Деятельность:</span>
-              <span class="info-value">{{ user.activity_type }}</span>
+            <!-- Зона загрузки -->
+            <form id="uploadForm" action="{{ url_for('documents.upload') }}" method="POST" enctype="multipart/form-data">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📄</div>
+                    <div class="upload-text">Перетащите документ сюда или нажмите для выбора</div>
+                    <div class="upload-hint">Поддерживаемые форматы: PDF, DOCX. Максимальный размер: 50MB</div>
+                    <input type="file" name="document" id="fileInput" accept=".pdf,.docx">
+                </div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">Загрузка: 0%</div>
+                </div>
+            </form>
+
+            <!-- Флеш сообщения -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div style="margin-bottom: 20px;">
+                {% for category, message in messages %}
+                <div style="padding: 15px; border-radius: 10px; margin-bottom: 10px;
+                    {% if category == 'error' %}background: rgba(244, 67, 54, 0.1); color: #f44336; border: 1px solid #f44336;
+                    {% else %}background: rgba(76, 175, 80, 0.1); color: #4caf50; border: 1px solid #4caf50;{% endif %}">
+                    {{ message }}
+                </div>
+                {% endfor %}
             </div>
             {% endif %}
-            {% if user.company %}
-            <div class="info-row">
-              <span class="info-label">Компания:</span>
-              <span class="info-value">{{ user.company.name }}</span>
+            {% endwith %}
+
+            <!-- Список документов -->
+            <h2 class="section-title">Мои документы</h2>
+            
+            {% if documents %}
+            <div class="documents-list">
+                {% for doc in documents %}
+                <div class="document-card">
+                    <div class="document-title">{{ doc.original_filename }}</div>
+                    <div class="document-meta">
+                        <div>Загружен: {{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
+                        <div>Страниц: {{ doc.total_pages }}</div>
+                    </div>
+                    {% if doc.is_checked %}
+                        {% if doc.rating >= 80 %}
+                        <span class="document-rating rating-high">Рейтинг: {{ doc.rating|round(1) }}</span>
+                        {% elif doc.rating >= 50 %}
+                        <span class="document-rating rating-medium">Рейтинг: {{ doc.rating|round(1) }}</span>
+                        {% else %}
+                        <span class="document-rating rating-low">Рейтинг: {{ doc.rating|round(1) }}</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="document-rating rating-pending">Не проверен</span>
+                    {% endif %}
+                    <div class="document-actions">
+                        <a href="{{ url_for('documents.view', doc_id=doc.id) }}" class="btn-view">Открыть</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <p>У вас пока нет загруженных документов</p>
+                <p style="margin-top: 10px;">Загрузите документ для проверки</p>
             </div>
             {% endif %}
-          </div>
-        </div>
-
-        <div class="logout-section">
-          <a href="{{ url_for('auth.logout') }}" class="logout-btn-main">Выйти из системы</a>
-        </div>
-      </main>
+        </main>
     </div>
-  </body>
+
+    <script>
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+
+        // Клик по зоне загрузки
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        // Drag & Drop
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                uploadFile(files[0]);
+            }
+        });
+
+        // Выбор файла
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                uploadFile(fileInput.files[0]);
+            }
+        });
+
+        // Загрузка файла с прогрессом
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('document', file);
+
+            progressContainer.style.display = 'block';
+            uploadZone.style.display = 'none';
+
+            const xhr = new XMLHttpRequest();
+            
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    progressFill.style.width = percent + '%';
+                    progressText.textContent = `Загрузка: ${percent}%`;
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    progressText.textContent = 'Обработка документа...';
+                    progressFill.style.width = '100%';
+                    // Перезагружаем страницу для отображения результата
+                    setTimeout(() => location.reload(), 500);
+                } else {
+                    progressText.textContent = 'Ошибка загрузки';
+                    progressFill.style.background = '#f44336';
+                }
+            });
+
+            xhr.addEventListener('error', () => {
+                progressText.textContent = 'Ошибка соединения';
+                progressFill.style.background = '#f44336';
+            });
+
+            xhr.open('POST', '{{ url_for("documents.upload") }}');
+            xhr.send(formData);
+        }
+    </script>
+</body>
 </html>

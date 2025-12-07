@@ -14,7 +14,7 @@ from typing import Union, BinaryIO, List, Optional
 import hashlib
 
 from .base import BaseParser
-from src.models.document import (
+from ..models.document import (
     ParsedDocument,
     DocumentMetadata,
     DocumentType,

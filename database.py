@@ -1,4 +1,4 @@
-# database.py - Модуль базы данных для авторизации
+# database.py - Модуль базы данных
 
 from sqlalchemy import (
     create_engine,
@@ -7,9 +7,14 @@ from sqlalchemy import (
     String,
     Boolean,
     ForeignKey,
+    DateTime,
+    Text,
+    Float,
+    JSON,
 )
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.ext.declarative import declarative_base
+from datetime import datetime
 import hashlib
 import os
 
@@ -53,9 +58,10 @@ class User(Base):
     password_hash = Column(String(128), nullable=False)
     client_type = Column(String(10), nullable=False)  # 'private' или 'company'
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
-    activity_type = Column(String(100), nullable=True)  # Студент, Инженер и т.д.
+    activity_type = Column(String(100), nullable=True)
 
     company = relationship("Company", back_populates="users")
+    documents = relationship("Document", back_populates="user", order_by="Document.created_at.desc()")
 
     def set_password(self, password):
         """Установка пароля с хешированием"""
@@ -64,6 +70,86 @@ class User(Base):
     def check_password(self, password):
         """Проверка пароля"""
         return self.password_hash == hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+
+class Document(Base):
+    """Модель загруженного документа"""
+    __tablename__ = "documents"
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    
+    # Информация о файле
+    original_filename = Column(String(255), nullable=False)
+    file_hash = Column(String(64), unique=True, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    document_type = Column(String(10), nullable=False)  # 'pdf' или 'docx'
+    
+    # Папка с изображениями страниц
+    images_folder = Column(String(255), nullable=False)
+    
+    # Структура документа (JSON)
+    structure_json = Column(Text, nullable=True)
+    structure_markdown = Column(Text, nullable=True)
+    
+    # Информация о проверке
+    is_checked = Column(Boolean, default=False)
+    check_date = Column(DateTime, nullable=True)
+    rating = Column(Float, nullable=True)  # 0-100
+    
+    # Метаданные
+    total_pages = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Связи
+    user = relationship("User", back_populates="documents")
+    pages = relationship("DocumentPage", back_populates="document", order_by="DocumentPage.page_number", cascade="all, delete-orphan")
+    errors = relationship("DocumentError", back_populates="document", cascade="all, delete-orphan")
+
+
+class DocumentPage(Base):
+    """Модель страницы документа"""
+    __tablename__ = "document_pages"
+    id = Column(Integer, primary_key=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    
+    page_number = Column(Integer, nullable=False)
+    image_path = Column(String(255), nullable=False)  # Путь к изображению страницы
+    image_with_errors_path = Column(String(255), nullable=True)  # Путь к изображению с отмеченными ошибками
+    
+    width = Column(Float, nullable=True)  # Ширина страницы в pt
+    height = Column(Float, nullable=True)  # Высота страницы в pt
+    
+    document = relationship("Document", back_populates="pages")
+    errors = relationship("DocumentError", back_populates="page", cascade="all, delete-orphan")
+
+
+class DocumentError(Base):
+    """Модель ошибки в документе"""
+    __tablename__ = "document_errors"
+    id = Column(Integer, primary_key=True)
+    document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
+    page_id = Column(Integer, ForeignKey("document_pages.id"), nullable=False)
+    
+    error_number = Column(Integer, nullable=False)  # Номер ошибки в документе
+    rule_name = Column(String(100), nullable=False)  # Название правила
+    rule_code = Column(String(50), nullable=False)  # Код правила (например "font_check")
+    
+    # Описание ошибки
+    message = Column(Text, nullable=False)
+    severity = Column(String(20), default="warning")  # 'error', 'warning', 'info'
+    
+    # Координаты ошибки на странице (в pt)
+    bbox_x0 = Column(Float, nullable=True)
+    bbox_y0 = Column(Float, nullable=True)
+    bbox_x1 = Column(Float, nullable=True)
+    bbox_y1 = Column(Float, nullable=True)
+    
+    # Дополнительные данные
+    block_id = Column(String(50), nullable=True)  # ID блока из JSON-структуры
+    extra_data = Column(JSON, nullable=True)  # Дополнительные данные об ошибке
+    
+    document = relationship("Document", back_populates="errors")
+    page = relationship("DocumentPage", back_populates="errors")
 
 
 # --- 3. Управление сессиями ---

@@ -8,7 +8,7 @@ including structured text, JSON, Markdown, and RAG chunks.
 from typing import Dict, Any, List, Optional
 import json
 
-from src.models.document import ParsedDocument, TextBlock, TextBlockType
+from ..models.document import ParsedDocument, TextBlock, TextBlockType
 
 
 class LLMExporter:

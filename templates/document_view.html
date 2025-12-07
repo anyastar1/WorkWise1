@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ document.original_filename }} - WorkWise</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .document-header {
+            background: var(--color-main-content-bg);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .document-info h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+        .document-meta {
+            color: var(--color-secondary-text);
+            font-size: 14px;
+        }
+        .document-rating {
+            font-size: 48px;
+            font-weight: 700;
+            text-align: center;
+        }
+        .rating-label {
+            font-size: 14px;
+            color: var(--color-secondary-text);
+        }
+        .rating-high { color: #4caf50; }
+        .rating-medium { color: #ffc107; }
+        .rating-low { color: #f44336; }
+        .btn-check {
+            padding: 15px 40px;
+            background: var(--color-accent-primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-check:hover {
+            background: #2a7e71;
+            transform: translateY(-2px);
+        }
+        .btn-check:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .page-container {
+            background: var(--color-main-content-bg);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .page-title {
+            font-size: 18px;
+            font-weight: 500;
+        }
+        .page-errors-count {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .errors-none { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
+        .errors-some { background: rgba(244, 67, 54, 0.2); color: #f44336; }
+        .page-image-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .page-image {
+            max-width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        .errors-list {
+            margin-top: 20px;
+        }
+        .error-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+        .error-item.error { background: rgba(244, 67, 54, 0.1); border-left: 4px solid #f44336; }
+        .error-item.warning { background: rgba(255, 193, 7, 0.1); border-left: 4px solid #ffc107; }
+        .error-item.info { background: rgba(33, 150, 243, 0.1); border-left: 4px solid #2196f3; }
+        .error-number {
+            font-weight: 700;
+            font-size: 18px;
+            min-width: 30px;
+        }
+        .error-content {
+            flex: 1;
+        }
+        .error-rule {
+            font-size: 12px;
+            color: var(--color-secondary-text);
+            margin-top: 5px;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--color-accent-primary);
+            text-decoration: none;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+        .toggle-view {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--color-accent-primary);
+            background: transparent;
+            color: var(--color-text-main);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .toggle-btn.active {
+            background: var(--color-accent-primary);
+            color: white;
+        }
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-item {
+            background: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: var(--color-secondary-text);
+            margin-top: 5px;
+        }
+        .checking-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .checking-content {
+            text-align: center;
+        }
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: var(--color-accent-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="lkPage">
+        <nav class="top-nav">
+            <div class="nav-left">
+                <a href="{{ url_for('main.dashboard') }}" class="logo" style="text-decoration: none;">WorkWise</a>
+            </div>
+            <div class="user-info-nav">{{ user.login }}</div>
+        </nav>
+
+        <main class="main-content" style="margin-left: 0; max-width: 1000px; margin: 90px auto 0;">
+            <a href="{{ url_for('main.dashboard') }}" class="back-link">← Вернуться к документам</a>
+
+            <!-- Заголовок документа -->
+            <div class="document-header">
+                <div class="document-info">
+                    <h1>{{ document.original_filename }}</h1>
+                    <div class="document-meta">
+                        Загружен: {{ document.created_at.strftime('%d.%m.%Y %H:%M') }} •
+                        {{ document.total_pages }} стр. •
+                        {{ (document.file_size / 1024)|round(1) }} KB
+                    </div>
+                </div>
+                
+                {% if document.is_checked %}
+                <div>
+                    <div class="document-rating {% if document.rating >= 80 %}rating-high{% elif document.rating >= 50 %}rating-medium{% else %}rating-low{% endif %}">
+                        {{ document.rating|round(1) }}
+                    </div>
+                    <div class="rating-label">Рейтинг документа</div>
+                </div>
+                {% else %}
+                <button type="button" class="btn-check" id="checkBtn" onclick="checkDocument()">
+                    Проверить документ
+                </button>
+                {% endif %}
+            </div>
+
+            {% if document.is_checked %}
+            <!-- Статистика ошибок -->
+            <div class="document-header">
+                <div class="summary-stats" style="width: 100%;">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ document.errors|length }}</div>
+                        <div class="stat-label">Всего ошибок</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #f44336;">{{ document.errors|selectattr('severity', 'equalto', 'error')|list|length }}</div>
+                        <div class="stat-label">Критических</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #ffc107;">{{ document.errors|selectattr('severity', 'equalto', 'warning')|list|length }}</div>
+                        <div class="stat-label">Предупреждений</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" style="color: #2196f3;">{{ document.errors|selectattr('severity', 'equalto', 'info')|list|length }}</div>
+                        <div class="stat-label">Информация</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Страницы документа -->
+            {% for page_data in pages_data %}
+            <div class="page-container">
+                <div class="page-header">
+                    <div class="page-title">Страница {{ page_data.page.page_number }}</div>
+                    {% if document.is_checked %}
+                    <span class="page-errors-count {% if page_data.errors %}errors-some{% else %}errors-none{% endif %}">
+                        {% if page_data.errors %}
+                            {{ page_data.errors|length }} ошибок
+                        {% else %}
+                            Без ошибок
+                        {% endif %}
+                    </span>
+                    {% endif %}
+                </div>
+
+                {% if document.is_checked and page_data.errors_image_url %}
+                <div class="toggle-view">
+                    <button class="toggle-btn active" onclick="showOriginal({{ page_data.page.page_number }})">Оригинал</button>
+                    <button class="toggle-btn" onclick="showErrors({{ page_data.page.page_number }})">С ошибками</button>
+                </div>
+                {% endif %}
+
+                <div class="page-image-container">
+                    <img src="{{ page_data.image_url }}" 
+                         alt="Страница {{ page_data.page.page_number }}" 
+                         class="page-image"
+                         id="page-img-{{ page_data.page.page_number }}"
+                         data-original="{{ page_data.image_url }}"
+                         data-errors="{{ page_data.errors_image_url or '' }}">
+                </div>
+
+                {% if page_data.errors %}
+                <div class="errors-list">
+                    <h3 style="margin-bottom: 15px;">Найденные ошибки:</h3>
+                    {% for error in page_data.errors %}
+                    <div class="error-item {{ error.severity }}">
+                        <div class="error-number">#{{ error.error_number }}</div>
+                        <div class="error-content">
+                            <div>{{ error.message }}</div>
+                            <div class="error-rule">{{ error.rule_name }}</div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <!-- Кнопка удаления -->
+            <form action="{{ url_for('documents.delete_document', doc_id=document.id) }}" method="POST" 
+                  style="text-align: center; margin-top: 30px;"
+                  onsubmit="return confirm('Вы уверены, что хотите удалить этот документ?');">
+                <button type="submit" style="padding: 10px 30px; background: rgba(244, 67, 54, 0.2); color: #f44336; border: 1px solid #f44336; border-radius: 10px; cursor: pointer;">
+                    Удалить документ
+                </button>
+            </form>
+        </main>
+    </div>
+
+    <!-- Оверлей проверки -->
+    <div class="checking-overlay" id="checkingOverlay">
+        <div class="checking-content">
+            <div class="spinner"></div>
+            <p style="margin-top: 20px; font-size: 18px;">Проверка документа...</p>
+        </div>
+    </div>
+
+    <script>
+        function checkDocument(event) {
+            if (event) {
+                event.preventDefault();
+            }
+            
+            const btn = document.getElementById('checkBtn');
+            const overlay = document.getElementById('checkingOverlay');
+            
+            console.log('Starting document check...');
+            
+            btn.disabled = true;
+            btn.textContent = 'Проверка...';
+            overlay.style.display = 'flex';
+
+            fetch('{{ url_for("documents.check_document", doc_id=document.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    return response.text().then(text => {
+                        throw new Error(`HTTP ${response.status}: ${text}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Response data:', data);
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    overlay.style.display = 'none';
+                    btn.disabled = false;
+                    btn.textContent = 'Проверить документ';
+                }
+            })
+            .catch(error => {
+                console.error('Fetch error:', error);
+                alert('Ошибка: ' + error.message);
+                overlay.style.display = 'none';
+                btn.disabled = false;
+                btn.textContent = 'Проверить документ';
+            });
+            
+            return false;
+        }
+
+        function showOriginal(pageNum) {
+            const img = document.getElementById('page-img-' + pageNum);
+            img.src = img.dataset.original;
+            updateToggleButtons(pageNum, 0);
+        }
+
+        function showErrors(pageNum) {
+            const img = document.getElementById('page-img-' + pageNum);
+            if (img.dataset.errors) {
+                img.src = img.dataset.errors;
+            }
+            updateToggleButtons(pageNum, 1);
+        }
+
+        function updateToggleButtons(pageNum, activeIndex) {
+            const container = document.getElementById('page-img-' + pageNum).parentElement.previousElementSibling;
+            if (container && container.classList.contains('toggle-view')) {
+                const buttons = container.querySelectorAll('.toggle-btn');
+                buttons.forEach((btn, i) => {
+                    btn.classList.toggle('active', i === activeIndex);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
