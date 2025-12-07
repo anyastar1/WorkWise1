@@ -105,16 +105,16 @@
               />
             </div>
 
-            <p class="forgot-password">
-              <a href="{{ url_for('auth.password_recovery') }}">Забыли пароль?</a>
+            <p class="forgot-password" style="padding-top:10px;padding-bottom:10px;">
+              <a style="text-decoration:none;color:inherit;" href="{{ url_for('auth.password_recovery') }}">Забыли пароль?</a>
             </p>
 
             <button type="submit" class="login-btn">Войти</button>
           </form>
 
-          <div class="register-link">
+          <div class="register-link" style="padding-top:10px;padding-bottom:10px;">
             Нет аккаунта?
-            <a href="{{ url_for('auth.registration') }}">Зарегистрироваться</a>
+            <a style="text-decoration:none;color:inherit;" href="{{ url_for('auth.registration') }}">Зарегистрироваться</a>
           </div>
         </div>
       </main>
