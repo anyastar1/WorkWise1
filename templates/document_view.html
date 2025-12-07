@@ -309,14 +309,33 @@
             </div>
             {% endfor %}
 
-            <!-- Кнопка удаления -->
-            <form action="{{ url_for('documents.delete_document', doc_id=document.id) }}" method="POST" 
-                  style="text-align: center; margin-top: 30px;"
-                  onsubmit="return confirm('Вы уверены, что хотите удалить этот документ?');">
-                <button type="submit" style="padding: 10px 30px; background: rgba(244, 67, 54, 0.2); color: #f44336; border: 1px solid #f44336; border-radius: 10px; cursor: pointer;">
-                    Удалить документ
-                </button>
-            </form>
+            <!-- Диагностика -->
+            {% if not document.structure_json %}
+            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                <h3 style="color: #ffc107; margin-bottom: 10px;">⚠️ Структура документа не найдена</h3>
+                <p style="margin-bottom: 15px;">Документ не имеет JSON-структуры, необходимой для проверки. Попробуйте пере-парсить документ.</p>
+                <form action="{{ url_for('documents.reparse_document', doc_id=document.id) }}" method="POST" style="display: inline;">
+                    <button type="submit" style="padding: 10px 20px; background: #ffc107; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                        Пере-парсить документ
+                    </button>
+                </form>
+            </div>
+            {% endif %}
+
+            <!-- Кнопки управления -->
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap;">
+                <form action="{{ url_for('documents.reparse_document', doc_id=document.id) }}" method="POST">
+                    <button type="submit" style="padding: 10px 30px; background: rgba(33, 150, 243, 0.2); color: #2196f3; border: 1px solid #2196f3; border-radius: 10px; cursor: pointer;">
+                        Пере-парсить
+                    </button>
+                </form>
+                <form action="{{ url_for('documents.delete_document', doc_id=document.id) }}" method="POST" 
+                      onsubmit="return confirm('Вы уверены, что хотите удалить этот документ?');">
+                    <button type="submit" style="padding: 10px 30px; background: rgba(244, 67, 54, 0.2); color: #f44336; border: 1px solid #f44336; border-radius: 10px; cursor: pointer;">
+                        Удалить документ
+                    </button>
+                </form>
+            </div>
         </main>
     </div>
 

@@ -53,6 +53,11 @@ class DocumentProcessor:
         # 3. Получаем информацию о файле
         file_info = self._get_file_info(file_path)
         
+        # 3.1. Сохраняем копию оригинального файла
+        import shutil
+        original_copy_path = os.path.join(doc_folder, f"original.{file_info['type']}")
+        shutil.copy2(file_path, original_copy_path)
+        
         # 4. Конвертируем страницы в изображения
         page_images = self._convert_to_images(file_path, images_folder)
         
@@ -217,8 +222,219 @@ class DocumentProcessor:
             return json_str, markdown_str
             
         except Exception as e:
-            print(f"Ошибка парсинга документа: {e}")
-            return None, None
+            import traceback
+            print(f"Ошибка парсинга через document_parser: {e}")
+            traceback.print_exc()
+            
+            # Fallback: парсим напрямую через PyMuPDF
+            return self._parse_pdf_fallback(file_path)
+    
+    def _parse_pdf_fallback(self, file_path: str) -> Tuple[str, str]:
+        """Fallback парсинг PDF напрямую через PyMuPDF"""
+        try:
+            ext = Path(file_path).suffix.lower()
+            if ext != '.pdf':
+                # Для DOCX без document_parser создаём минимальную структуру
+                return self._create_minimal_structure(file_path)
+            
+            doc = fitz.open(file_path)
+            
+            pages = []
+            markdown_parts = []
+            block_counter = 0
+            
+            for page_num, page in enumerate(doc, 1):
+                page_width = page.rect.width
+                page_height = page.rect.height
+                
+                blocks = []
+                text_dict = page.get_text("dict", flags=fitz.TEXT_PRESERVE_WHITESPACE)
+                
+                for block_data in text_dict.get("blocks", []):
+                    if block_data.get("type") != 0:  # Только текстовые блоки
+                        continue
+                    
+                    block_counter += 1
+                    block_id = f"blk_p{page_num}_{block_counter}"
+                    
+                    lines = []
+                    full_text = []
+                    
+                    for line_data in block_data.get("lines", []):
+                        spans = []
+                        line_text = []
+                        
+                        for span_data in line_data.get("spans", []):
+                            text = span_data.get("text", "")
+                            if not text:
+                                continue
+                            
+                            line_text.append(text)
+                            
+                            # Цвет
+                            color_int = span_data.get("color", 0)
+                            color_hex = f"#{color_int:06x}".upper()
+                            
+                            # Флаги стиля
+                            flags = span_data.get("flags", 0)
+                            is_bold = bool(flags & 16)
+                            is_italic = bool(flags & 2)
+                            
+                            spans.append({
+                                "text": text,
+                                "style": {
+                                    "font_name": span_data.get("font", "unknown"),
+                                    "font_size": span_data.get("size", 12.0),
+                                    "font_weight": "bold" if is_bold else "normal",
+                                    "font_style": "italic" if is_italic else "normal",
+                                    "color": color_hex,
+                                    "background_color": None,
+                                    "is_underline": bool(flags & 4),
+                                    "is_strikethrough": bool(flags & 8),
+                                    "line_spacing": None,
+                                    "letter_spacing": None
+                                },
+                                "bbox": {
+                                    "x0": round(span_data["bbox"][0], 2),
+                                    "y0": round(span_data["bbox"][1], 2),
+                                    "x1": round(span_data["bbox"][2], 2),
+                                    "y1": round(span_data["bbox"][3], 2),
+                                    "width": round(span_data["bbox"][2] - span_data["bbox"][0], 2),
+                                    "height": round(span_data["bbox"][3] - span_data["bbox"][1], 2)
+                                }
+                            })
+                        
+                        if spans:
+                            lines.append({
+                                "text": "".join(line_text),
+                                "spans": spans,
+                                "bbox": {
+                                    "x0": round(line_data["bbox"][0], 2),
+                                    "y0": round(line_data["bbox"][1], 2),
+                                    "x1": round(line_data["bbox"][2], 2),
+                                    "y1": round(line_data["bbox"][3], 2),
+                                    "width": round(line_data["bbox"][2] - line_data["bbox"][0], 2),
+                                    "height": round(line_data["bbox"][3] - line_data["bbox"][1], 2)
+                                },
+                                "baseline_y": None
+                            })
+                            full_text.append("".join(line_text))
+                    
+                    if lines:
+                        block_text = "\n".join(full_text)
+                        
+                        # Определяем тип блока
+                        first_span = lines[0]["spans"][0] if lines[0]["spans"] else {}
+                        font_size = first_span.get("style", {}).get("font_size", 12)
+                        is_bold = first_span.get("style", {}).get("font_weight") == "bold"
+                        
+                        block_type = "paragraph"
+                        semantic_level = None
+                        if font_size > 14 or is_bold:
+                            block_type = "heading"
+                            semantic_level = 1 if font_size >= 18 else 2 if font_size >= 14 else 3
+                        
+                        blocks.append({
+                            "block_id": block_id,
+                            "block_type": block_type,
+                            "text": block_text,
+                            "lines": lines,
+                            "bbox": {
+                                "x0": round(block_data["bbox"][0], 2),
+                                "y0": round(block_data["bbox"][1], 2),
+                                "x1": round(block_data["bbox"][2], 2),
+                                "y1": round(block_data["bbox"][3], 2),
+                                "width": round(block_data["bbox"][2] - block_data["bbox"][0], 2),
+                                "height": round(block_data["bbox"][3] - block_data["bbox"][1], 2)
+                            },
+                            "page_number": page_num,
+                            "reading_order": len(blocks),
+                            "semantic_level": semantic_level,
+                            "line_count": len(lines),
+                            "avg_line_spacing": None
+                        })
+                        
+                        # Markdown
+                        if block_type == "heading":
+                            markdown_parts.append(f"{'#' * (semantic_level or 1)} {block_text}")
+                        else:
+                            markdown_parts.append(block_text)
+                
+                pages.append({
+                    "info": {
+                        "page_number": page_num,
+                        "width": round(page_width, 2),
+                        "height": round(page_height, 2),
+                        "rotation": page.rotation
+                    },
+                    "blocks": blocks,
+                    "block_count": len(blocks)
+                })
+            
+            doc.close()
+            
+            # Формируем итоговую структуру
+            structure = {
+                "metadata": {
+                    "filename": Path(file_path).name,
+                    "document_type": "pdf",
+                    "total_pages": len(pages),
+                    "file_size_bytes": Path(file_path).stat().st_size,
+                    "title": None,
+                    "author": None,
+                    "creation_date": None,
+                    "modification_date": None,
+                    "content_hash": None
+                },
+                "pages": pages,
+                "summary": {
+                    "total_blocks": block_counter,
+                    "total_pages": len(pages)
+                }
+            }
+            
+            json_str = json.dumps(structure, ensure_ascii=False, indent=2)
+            markdown_str = "\n\n".join(markdown_parts)
+            
+            return json_str, markdown_str
+            
+        except Exception as e:
+            import traceback
+            print(f"Ошибка fallback парсинга: {e}")
+            traceback.print_exc()
+            return self._create_minimal_structure(file_path)
+    
+    def _create_minimal_structure(self, file_path: str) -> Tuple[str, str]:
+        """Создание минимальной структуры документа"""
+        structure = {
+            "metadata": {
+                "filename": Path(file_path).name,
+                "document_type": Path(file_path).suffix.lower().lstrip('.'),
+                "total_pages": 1,
+                "file_size_bytes": Path(file_path).stat().st_size,
+                "title": None,
+                "author": None,
+                "creation_date": None,
+                "modification_date": None,
+                "content_hash": None
+            },
+            "pages": [{
+                "info": {
+                    "page_number": 1,
+                    "width": 595.0,
+                    "height": 842.0,
+                    "rotation": 0
+                },
+                "blocks": [],
+                "block_count": 0
+            }],
+            "summary": {
+                "total_blocks": 0,
+                "total_pages": 1
+            }
+        }
+        
+        return json.dumps(structure, ensure_ascii=False, indent=2), ""
     
     def get_document_structure(self, document: Document) -> dict:
         """Получение структуры документа как dict"""

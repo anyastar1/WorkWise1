@@ -159,6 +159,70 @@ def check_document(doc_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@bp.route("/document/<int:doc_id>/reparse", methods=["POST"])
+@require_login
+def reparse_document(doc_id):
+    """Повторный парсинг структуры документа"""
+    user = get_current_user(g.db_session)
+    
+    document = g.db_session.query(Document).filter_by(
+        id=doc_id, user_id=user.id
+    ).first()
+    
+    if not document:
+        flash("Документ не найден", "error")
+        return redirect(url_for('main.dashboard'))
+    
+    try:
+        doc_folder = os.path.dirname(document.images_folder)
+        processor = DocumentProcessor(
+            uploads_dir=os.path.join(current_app.root_path, 'uploads')
+        )
+        
+        # Ищем оригинальный файл
+        original_path = None
+        for ext in ['.pdf', '.docx']:
+            candidate = os.path.join(doc_folder, f"original{ext}")
+            if os.path.exists(candidate):
+                original_path = candidate
+                break
+        
+        if not original_path:
+            # Ищем любой PDF/DOCX в папке
+            for f in os.listdir(doc_folder):
+                if f.endswith(('.pdf', '.docx')):
+                    original_path = os.path.join(doc_folder, f)
+                    break
+        
+        if original_path and os.path.exists(original_path):
+            structure, markdown = processor._parse_document_structure(original_path)
+            document.structure_json = structure
+            document.structure_markdown = markdown
+            flash("Документ успешно пере-парсен!", "success")
+        else:
+            # Fallback: создаём минимальную структуру
+            structure, markdown = processor._create_minimal_structure(document.original_filename)
+            document.structure_json = structure
+            document.structure_markdown = markdown
+            flash("Создана минимальная структура (оригинальный файл не найден)", "warning")
+        
+        # Сбрасываем статус проверки
+        document.is_checked = False
+        document.rating = None
+        
+        # Удаляем старые ошибки
+        g.db_session.query(DocumentError).filter_by(document_id=document.id).delete()
+        
+        g.db_session.commit()
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        flash(f"Ошибка: {str(e)}", "error")
+    
+    return redirect(url_for('documents.view', doc_id=doc_id))
+
+
 @bp.route("/document/<int:doc_id>/delete", methods=["POST"])
 @require_login
 def delete_document(doc_id):
