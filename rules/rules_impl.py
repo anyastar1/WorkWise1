@@ -367,19 +367,36 @@ class MarginsRule(BaseRule):
         margin_left: float = 85,  # ~30mm при 72dpi
         margin_right: float = 42,  # ~15mm
         margin_top: float = 57,  # ~20mm
-        margin_bottom: float = 57,
-    ):  # ~20mm
+        margin_bottom: float = 57,  # ~20mm
+        page_number_zone_y_min: float = 780,  # Зона номера страницы (снизу)
+        page_number_zone_y_max: float = 842,
+    ):
         """
         Args:
             margin_left: Левое поле в pt (по умолчанию 30мм)
             margin_right: Правое поле в pt (по умолчанию 15мм)
             margin_top: Верхнее поле в pt (по умолчанию 20мм)
             margin_bottom: Нижнее поле в pt (по умолчанию 20мм)
+            page_number_zone_y_min: Минимальная Y-координата зоны номера страницы
+            page_number_zone_y_max: Максимальная Y-координата зоны номера страницы
         """
         self.margin_left = margin_left
         self.margin_right = margin_right
         self.margin_top = margin_top
         self.margin_bottom = margin_bottom
+        self.page_number_zone_y_min = page_number_zone_y_min
+        self.page_number_zone_y_max = page_number_zone_y_max
+
+    def _is_page_number_block(self, block: dict) -> bool:
+        """Проверяет, является ли блок номером страницы"""
+        text = block.get("text", "").strip()
+        bbox = block.get("bbox", {})
+        y0 = bbox.get("y0", 0)
+        
+        # Проверяем: текст - число и находится в зоне номера страницы
+        if text.isdigit() and self.page_number_zone_y_min <= y0 <= self.page_number_zone_y_max:
+            return True
+        return False
 
     def check(self, document_structure: dict) -> RuleResult:
         errors = []
@@ -400,6 +417,10 @@ class MarginsRule(BaseRule):
                 # Пропускаем колонтитулы
                 block_type = block.get("block_type", "")
                 if block_type in ("header", "footer"):
+                    continue
+                
+                # Пропускаем номера страниц
+                if self._is_page_number_block(block):
                     continue
 
                 bbox = block.get("bbox", {})

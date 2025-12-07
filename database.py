@@ -19,15 +19,17 @@ import hashlib
 import os
 
 # --- 1. Инициализация базы данных ---
-DATABASE_URL = "sqlite:///workwise.db"
+DATABASE_URL = "sqlite:///aikor.db"
 engine = create_engine(DATABASE_URL)
 Base = declarative_base()
 
 
 # --- 2. Модели (Таблицы) ---
 
+
 class Company(Base):
     """Модель компании"""
+
     __tablename__ = "companies"
     id = Column(Integer, primary_key=True)
     name = Column(String(100), unique=True, nullable=False)
@@ -41,6 +43,7 @@ class Company(Base):
 
 class KeyCompany(Base):
     """Модель ключа компании для регистрации сотрудников"""
+
     __tablename__ = "key_companies"
     id = Column(Integer, primary_key=True)
     key_value = Column(String(50), unique=True, nullable=False)
@@ -51,6 +54,7 @@ class KeyCompany(Base):
 
 class User(Base):
     """Модель пользователя"""
+
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     login = Column(String(80), unique=True, nullable=False)
@@ -61,7 +65,9 @@ class User(Base):
     activity_type = Column(String(100), nullable=True)
 
     company = relationship("Company", back_populates="users")
-    documents = relationship("Document", back_populates="user", order_by="Document.created_at.desc()")
+    documents = relationship(
+        "Document", back_populates="user", order_by="Document.created_at.desc()"
+    )
 
     def set_password(self, password):
         """Установка пароля с хешированием"""
@@ -69,85 +75,103 @@ class User(Base):
 
     def check_password(self, password):
         """Проверка пароля"""
-        return self.password_hash == hashlib.sha256(password.encode("utf-8")).hexdigest()
+        return (
+            self.password_hash == hashlib.sha256(password.encode("utf-8")).hexdigest()
+        )
 
 
 class Document(Base):
     """Модель загруженного документа"""
+
     __tablename__ = "documents"
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    
+
     # Информация о файле
     original_filename = Column(String(255), nullable=False)
     file_hash = Column(String(64), unique=True, nullable=False)
     file_size = Column(Integer, nullable=False)
     document_type = Column(String(10), nullable=False)  # 'pdf' или 'docx'
-    
+
     # Папка с изображениями страниц
     images_folder = Column(String(255), nullable=False)
-    
+
     # Структура документа (JSON)
     structure_json = Column(Text, nullable=True)
     structure_markdown = Column(Text, nullable=True)
-    
+
     # Информация о проверке
     is_checked = Column(Boolean, default=False)
     check_date = Column(DateTime, nullable=True)
     rating = Column(Float, nullable=True)  # 0-100
-    
+
     # Метаданные
     total_pages = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Связи
     user = relationship("User", back_populates="documents")
-    pages = relationship("DocumentPage", back_populates="document", order_by="DocumentPage.page_number", cascade="all, delete-orphan")
-    errors = relationship("DocumentError", back_populates="document", cascade="all, delete-orphan")
+    pages = relationship(
+        "DocumentPage",
+        back_populates="document",
+        order_by="DocumentPage.page_number",
+        cascade="all, delete-orphan",
+    )
+    errors = relationship(
+        "DocumentError", back_populates="document", cascade="all, delete-orphan"
+    )
 
 
 class DocumentPage(Base):
     """Модель страницы документа"""
+
     __tablename__ = "document_pages"
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
-    
+
     page_number = Column(Integer, nullable=False)
     image_path = Column(String(255), nullable=False)  # Путь к изображению страницы
-    image_with_errors_path = Column(String(255), nullable=True)  # Путь к изображению с отмеченными ошибками
-    
+    image_with_errors_path = Column(
+        String(255), nullable=True
+    )  # Путь к изображению с отмеченными ошибками
+
     width = Column(Float, nullable=True)  # Ширина страницы в pt
     height = Column(Float, nullable=True)  # Высота страницы в pt
-    
+
     document = relationship("Document", back_populates="pages")
-    errors = relationship("DocumentError", back_populates="page", cascade="all, delete-orphan")
+    errors = relationship(
+        "DocumentError", back_populates="page", cascade="all, delete-orphan"
+    )
 
 
 class DocumentError(Base):
     """Модель ошибки в документе"""
+
     __tablename__ = "document_errors"
     id = Column(Integer, primary_key=True)
     document_id = Column(Integer, ForeignKey("documents.id"), nullable=False)
     page_id = Column(Integer, ForeignKey("document_pages.id"), nullable=False)
-    
+
     error_number = Column(Integer, nullable=False)  # Номер ошибки в документе
     rule_name = Column(String(100), nullable=False)  # Название правила
-    rule_code = Column(String(50), nullable=False)  # Код правила (например "font_check")
-    
+    rule_code = Column(
+        String(50), nullable=False
+    )  # Код правила (например "font_check")
+
     # Описание ошибки
     message = Column(Text, nullable=False)
     severity = Column(String(20), default="warning")  # 'error', 'warning', 'info'
-    
+
     # Координаты ошибки на странице (в pt)
     bbox_x0 = Column(Float, nullable=True)
     bbox_y0 = Column(Float, nullable=True)
     bbox_x1 = Column(Float, nullable=True)
     bbox_y1 = Column(Float, nullable=True)
-    
+
     # Дополнительные данные
     block_id = Column(String(50), nullable=True)  # ID блока из JSON-структуры
     extra_data = Column(JSON, nullable=True)  # Дополнительные данные об ошибке
-    
+
     document = relationship("Document", back_populates="errors")
     page = relationship("DocumentPage", back_populates="errors")
 
@@ -166,9 +190,11 @@ def initialize_database():
     global engine, Session
 
     # Удаляем старый файл БД, если он есть
-    db_file_path = "workwise.db"
+    db_file_path = "aikor.db"
     if os.path.exists(db_file_path):
-        print(f"Обнаружен старый файл БД '{db_file_path}'. Удаляю для чистого старта...")
+        print(
+            f"Обнаружен старый файл БД '{db_file_path}'. Удаляю для чистого старта..."
+        )
         try:
             os.remove(db_file_path)
             engine = create_engine(DATABASE_URL)
