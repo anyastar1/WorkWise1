@@ -59,6 +59,50 @@
             cursor: not-allowed;
             transform: none;
         }
+        
+        /* Вкладки */
+        .tabs-container {
+            margin-bottom: 30px;
+        }
+        .tabs-nav {
+            display: flex;
+            gap: 5px;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 15px 30px;
+            background: transparent;
+            border: none;
+            color: var(--color-secondary-text);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover {
+            color: var(--color-text-main);
+        }
+        .tab-btn.active {
+            color: var(--color-accent-primary);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--color-accent-primary);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
         .page-container {
             background: var(--color-main-content-bg);
             border-radius: 15px;
@@ -171,6 +215,121 @@
             color: var(--color-secondary-text);
             margin-top: 5px;
         }
+        
+        /* LLM секция */
+        .llm-container {
+            background: var(--color-main-content-bg);
+            border-radius: 15px;
+            padding: 30px;
+        }
+        .llm-score {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .llm-score-value {
+            font-size: 72px;
+            font-weight: 700;
+        }
+        .llm-summary {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+        }
+        .llm-section {
+            margin-bottom: 25px;
+        }
+        .llm-section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .llm-list {
+            list-style: none;
+            padding: 0;
+        }
+        .llm-list li {
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.15);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .llm-list li::before {
+            content: '•';
+            color: var(--color-accent-primary);
+            font-weight: bold;
+        }
+        .llm-detailed {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        .llm-error {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid #f44336;
+            color: #f44336;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .llm-processing {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .llm-not-checked {
+            text-align: center;
+            padding: 60px 20px;
+        }
+        .btn-llm {
+            padding: 15px 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-llm:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-llm:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-retry {
+            padding: 10px 25px;
+            background: var(--color-accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn-cancel {
+            padding: 10px 25px;
+            background: transparent;
+            color: var(--color-secondary-text);
+            border: 1px solid var(--color-secondary-text);
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
         .checking-overlay {
             display: none;
             position: fixed;
@@ -232,7 +391,7 @@
                     <div class="document-rating {% if document.rating >= 80 %}rating-high{% elif document.rating >= 50 %}rating-medium{% else %}rating-low{% endif %}">
                         {{ document.rating|round(1) }}
                     </div>
-                    <div class="rating-label">Рейтинг документа</div>
+                    <div class="rating-label">Оценка оформления</div>
                 </div>
                 {% else %}
                 <button type="button" class="btn-check" id="checkBtn" onclick="checkDocument()">
@@ -241,100 +400,199 @@
                 {% endif %}
             </div>
 
-            {% if document.is_checked %}
-            <!-- Статистика ошибок -->
-            <div class="document-header">
-                <div class="summary-stats" style="width: 100%;">
-                    <div class="stat-item">
-                        <div class="stat-value">{{ document.errors|length }}</div>
-                        <div class="stat-label">Всего ошибок</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #f44336;">{{ document.errors|selectattr('severity', 'equalto', 'error')|list|length }}</div>
-                        <div class="stat-label">Критических</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #ffc107;">{{ document.errors|selectattr('severity', 'equalto', 'warning')|list|length }}</div>
-                        <div class="stat-label">Предупреждений</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value" style="color: #2196f3;">{{ document.errors|selectattr('severity', 'equalto', 'info')|list|length }}</div>
-                        <div class="stat-label">Информация</div>
-                    </div>
+            <!-- Вкладки -->
+            <div class="tabs-container">
+                <div class="tabs-nav">
+                    <button class="tab-btn active" onclick="switchTab('formatting')">📋 Проверка оформления</button>
+                    <button class="tab-btn" onclick="switchTab('llm')">🤖 Анализ содержания</button>
                 </div>
-            </div>
-            {% endif %}
 
-            <!-- Страницы документа -->
-            {% for page_data in pages_data %}
-            <div class="page-container">
-                <div class="page-header">
-                    <div class="page-title">Страница {{ page_data.page.page_number }}</div>
+                <!-- Вкладка: Проверка оформления -->
+                <div id="tab-formatting" class="tab-content active">
                     {% if document.is_checked %}
-                    <span class="page-errors-count {% if page_data.errors %}errors-some{% else %}errors-none{% endif %}">
-                        {% if page_data.errors %}
-                            {{ page_data.errors|length }} ошибок
-                        {% else %}
-                            Без ошибок
+                    <!-- Статистика ошибок -->
+                    <div class="document-header">
+                        <div class="summary-stats" style="width: 100%;">
+                            <div class="stat-item">
+                                <div class="stat-value">{{ document.errors|length }}</div>
+                                <div class="stat-label">Всего ошибок</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" style="color: #f44336;">{{ document.errors|selectattr('severity', 'equalto', 'error')|list|length }}</div>
+                                <div class="stat-label">Критических</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" style="color: #ffc107;">{{ document.errors|selectattr('severity', 'equalto', 'warning')|list|length }}</div>
+                                <div class="stat-label">Предупреждений</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value" style="color: #2196f3;">{{ document.errors|selectattr('severity', 'equalto', 'info')|list|length }}</div>
+                                <div class="stat-label">Информация</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Страницы документа -->
+                    {% for page_data in pages_data %}
+                    <div class="page-container">
+                        <div class="page-header">
+                            <div class="page-title">Страница {{ page_data.page.page_number }}</div>
+                            {% if document.is_checked %}
+                            <span class="page-errors-count {% if page_data.errors %}errors-some{% else %}errors-none{% endif %}">
+                                {% if page_data.errors %}
+                                    {{ page_data.errors|length }} ошибок
+                                {% else %}
+                                    Без ошибок
+                                {% endif %}
+                            </span>
+                            {% endif %}
+                        </div>
+
+                        {% if document.is_checked and page_data.errors_image_url %}
+                        <div class="toggle-view">
+                            <button class="toggle-btn" onclick="showOriginal({{ page_data.page.page_number }})">Оригинал</button>
+                            <button class="toggle-btn active" onclick="showErrors({{ page_data.page.page_number }})">С ошибками</button>
+                        </div>
                         {% endif %}
-                    </span>
+
+                        <div class="page-image-container">
+                            <img src="{{ page_data.errors_image_url if (document.is_checked and page_data.errors_image_url) else page_data.image_url }}" 
+                                 alt="Страница {{ page_data.page.page_number }}" 
+                                 class="page-image"
+                                 id="page-img-{{ page_data.page.page_number }}"
+                                 data-original="{{ page_data.image_url }}"
+                                 data-errors="{{ page_data.errors_image_url or '' }}">
+                        </div>
+
+                        {% if page_data.errors %}
+                        <div class="errors-list">
+                            <h3 style="margin-bottom: 15px;">Найденные ошибки:</h3>
+                            {% for error in page_data.errors %}
+                            <div class="error-item {{ error.severity }}">
+                                <div class="error-number">#{{ error.error_number }}</div>
+                                <div class="error-content">
+                                    <div>{{ error.message }}</div>
+                                    <div class="error-rule">{{ error.rule_name }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+
+                    {% if not document.structure_json %}
+                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
+                        <h3 style="color: #ffc107; margin-bottom: 10px;">⚠️ Структура документа не найдена</h3>
+                        <p style="margin-bottom: 15px;">Документ не имеет JSON-структуры, необходимой для проверки.</p>
+                        <form action="{{ url_for('documents.reparse_document', doc_id=document.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" style="padding: 10px 20px; background: #ffc107; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                                Пере-парсить документ
+                            </button>
+                        </form>
+                    </div>
                     {% endif %}
                 </div>
 
-                {% if document.is_checked and page_data.errors_image_url %}
-                <div class="toggle-view">
-                    <button class="toggle-btn" onclick="showOriginal({{ page_data.page.page_number }})">Оригинал</button>
-                    <button class="toggle-btn active" onclick="showErrors({{ page_data.page.page_number }})">С ошибками</button>
-                </div>
-                {% endif %}
-
-                <div class="page-image-container">
-                    {# По умолчанию показываем изображение с ошибками, если оно есть #}
-                    <img src="{{ page_data.errors_image_url if (document.is_checked and page_data.errors_image_url) else page_data.image_url }}" 
-                         alt="Страница {{ page_data.page.page_number }}" 
-                         class="page-image"
-                         id="page-img-{{ page_data.page.page_number }}"
-                         data-original="{{ page_data.image_url }}"
-                         data-errors="{{ page_data.errors_image_url or '' }}">
-                </div>
-                
-                {# Отладочная информация #}
-                {% if document.is_checked %}
-                <div style="font-size: 11px; color: #888; margin-top: 5px;">
-                    Оригинал: {{ page_data.image_url }}<br>
-                    С ошибками: {{ page_data.errors_image_url or 'не создано' }}
-                </div>
-                {% endif %}
-
-                {% if page_data.errors %}
-                <div class="errors-list">
-                    <h3 style="margin-bottom: 15px;">Найденные ошибки:</h3>
-                    {% for error in page_data.errors %}
-                    <div class="error-item {{ error.severity }}">
-                        <div class="error-number">#{{ error.error_number }}</div>
-                        <div class="error-content">
-                            <div>{{ error.message }}</div>
-                            <div class="error-rule">{{ error.rule_name }}</div>
+                <!-- Вкладка: LLM Анализ -->
+                <div id="tab-llm" class="tab-content">
+                    <div class="llm-container">
+                        {% if document.llm_processing %}
+                        <!-- Идёт обработка -->
+                        <div class="llm-processing">
+                            <div class="spinner" style="margin: 0 auto 20px;"></div>
+                            <h3>Анализ документа...</h3>
+                            <p style="color: var(--color-secondary-text); margin: 15px 0;">Это может занять некоторое время</p>
+                            <button class="btn-cancel" onclick="cancelLLM()">Отменить</button>
                         </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
+                        
+                        {% elif document.llm_error and not document.llm_checked %}
+                        <!-- Ошибка -->
+                        <div class="llm-error">
+                            <h3 style="margin-bottom: 10px;">❌ Ошибка анализа</h3>
+                            <p>{{ document.llm_error }}</p>
+                            <div style="margin-top: 20px;">
+                                <button class="btn-retry" onclick="startLLMAnalysis()">Повторить</button>
+                                <button class="btn-cancel" onclick="cancelLLM()">Отменить</button>
+                            </div>
+                        </div>
+                        
+                        {% elif document.llm_checked %}
+                        <!-- Результаты анализа -->
+                        <div class="llm-score">
+                            <div class="llm-score-value {% if document.llm_score >= 80 %}rating-high{% elif document.llm_score >= 50 %}rating-medium{% else %}rating-low{% endif %}">
+                                {{ document.llm_score|round(0)|int }}
+                            </div>
+                            <div class="rating-label">Оценка содержания от AI</div>
+                        </div>
 
-            <!-- Диагностика -->
-            {% if not document.structure_json %}
-            <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; border-radius: 10px; padding: 20px; margin-bottom: 20px;">
-                <h3 style="color: #ffc107; margin-bottom: 10px;">⚠️ Структура документа не найдена</h3>
-                <p style="margin-bottom: 15px;">Документ не имеет JSON-структуры, необходимой для проверки. Попробуйте пере-парсить документ.</p>
-                <form action="{{ url_for('documents.reparse_document', doc_id=document.id) }}" method="POST" style="display: inline;">
-                    <button type="submit" style="padding: 10px 20px; background: #ffc107; color: #000; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
-                        Пере-парсить документ
-                    </button>
-                </form>
+                        {% if document.llm_summary %}
+                        <div class="llm-summary">
+                            {{ document.llm_summary }}
+                        </div>
+                        {% endif %}
+
+                        {% if document.llm_strengths %}
+                        <div class="llm-section">
+                            <div class="llm-section-title" style="color: #4caf50;">✓ Сильные стороны</div>
+                            <ul class="llm-list">
+                                {% for item in document.llm_strengths %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        {% if document.llm_weaknesses %}
+                        <div class="llm-section">
+                            <div class="llm-section-title" style="color: #f44336;">✗ Слабые стороны</div>
+                            <ul class="llm-list">
+                                {% for item in document.llm_weaknesses %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        {% if document.llm_recommendations %}
+                        <div class="llm-section">
+                            <div class="llm-section-title" style="color: #2196f3;">💡 Рекомендации</div>
+                            <ul class="llm-list">
+                                {% for item in document.llm_recommendations %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                        {% endif %}
+
+                        {% if document.llm_detailed_report %}
+                        <div class="llm-section">
+                            <div class="llm-section-title">📝 Подробный отчёт</div>
+                            <div class="llm-detailed">{{ document.llm_detailed_report }}</div>
+                        </div>
+                        {% endif %}
+
+                        <div style="text-align: center; margin-top: 30px;">
+                            <button class="btn-retry" onclick="startLLMAnalysis()">🔄 Повторить анализ</button>
+                        </div>
+                        
+                        {% else %}
+                        <!-- Анализ не выполнен -->
+                        <div class="llm-not-checked">
+                            <div style="font-size: 64px; margin-bottom: 20px;">🤖</div>
+                            <h3 style="margin-bottom: 15px;">Анализ содержания</h3>
+                            <p style="color: var(--color-secondary-text); margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                                AI проанализирует текст вашего документа на соответствие теме, логичность изложения и структуру
+                            </p>
+                            <button class="btn-llm" onclick="startLLMAnalysis()" id="llmBtn">
+                                Запустить анализ AI
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
-            {% endif %}
 
             <!-- Кнопки управления -->
             <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px; flex-wrap: wrap;">
@@ -358,21 +616,32 @@
         <div class="checking-content">
             <div class="spinner"></div>
             <div>
-              <p style="margin-top: 20px; font-size: 18px;">Проверка документа...</p>
+                <p style="margin-top: 20px; font-size: 18px;" id="overlayText">Проверка документа...</p>
             </div>
         </div>
     </div>
 
     <script>
-        function checkDocument(event) {
-            if (event) {
-                event.preventDefault();
-            }
+        // Переключение вкладок
+        function switchTab(tabName) {
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
             
+            // Показываем выбранную
+            document.getElementById('tab-' + tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Проверка оформления
+        function checkDocument() {
             const btn = document.getElementById('checkBtn');
             const overlay = document.getElementById('checkingOverlay');
-            
-            console.log('Starting document check...');
+            document.getElementById('overlayText').textContent = 'Проверка оформления...';
             
             btn.disabled = true;
             btn.textContent = 'Проверка...';
@@ -386,16 +655,14 @@
                 }
             })
             .then(response => {
-                console.log('Response status:', response.status);
                 if (!response.ok) {
                     return response.text().then(text => {
-                        throw new Error(`HTTP ${response.status}: ${text}`);
+                        throw new Error(text);
                     });
                 }
                 return response.json();
             })
             .then(data => {
-                console.log('Response data:', data);
                 if (data.success) {
                     window.location.reload();
                 } else {
@@ -406,16 +673,50 @@
                 }
             })
             .catch(error => {
-                console.error('Fetch error:', error);
                 alert('Ошибка: ' + error.message);
                 overlay.style.display = 'none';
                 btn.disabled = false;
                 btn.textContent = 'Проверить документ';
             });
-            
-            return false;
         }
 
+        // LLM Анализ
+        function startLLMAnalysis() {
+            const overlay = document.getElementById('checkingOverlay');
+            document.getElementById('overlayText').textContent = 'Анализ содержания AI...';
+            overlay.style.display = 'flex';
+
+            fetch('{{ url_for("documents.llm_analyze_document", doc_id=document.id) }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    window.location.reload();
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    overlay.style.display = 'none';
+                }
+            })
+            .catch(error => {
+                alert('Ошибка соединения: ' + error.message);
+                overlay.style.display = 'none';
+            });
+        }
+
+        function cancelLLM() {
+            fetch('{{ url_for("documents.llm_cancel", doc_id=document.id) }}', {
+                method: 'POST'
+            }).then(() => {
+                window.location.reload();
+            });
+        }
+
+        // Переключение изображений
         function showOriginal(pageNum) {
             const img = document.getElementById('page-img-' + pageNum);
             img.src = img.dataset.original;

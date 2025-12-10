@@ -11,10 +11,12 @@ from flask import (
 )
 from werkzeug.utils import secure_filename
 
+from datetime import datetime
 from database import Document, DocumentPage, DocumentError
 from utils.auth_helpers import get_current_user, require_login
 from services.document_processor import DocumentProcessor
 from services.error_renderer import ErrorRenderer
+from services.llm_analyzer import LLMAnalyzer
 from rules.engine import RulesEngine
 
 bp = Blueprint("documents", __name__)
@@ -201,6 +203,128 @@ def check_document(doc_id):
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route("/document/<int:doc_id>/llm-analyze", methods=["POST"])
+@require_login
+def llm_analyze_document(doc_id):
+    """Анализ документа с помощью LLM"""
+    user = get_current_user(g.db_session)
+    
+    document = g.db_session.query(Document).filter_by(
+        id=doc_id, user_id=user.id
+    ).first()
+    
+    if not document:
+        return jsonify({'success': False, 'error': 'Документ не найден'}), 404
+    
+    # Проверяем, не идёт ли уже обработка
+    if document.llm_processing:
+        return jsonify({'success': False, 'error': 'Анализ уже выполняется'}), 400
+    
+    try:
+        # Устанавливаем флаг обработки
+        document.llm_processing = True
+        document.llm_error = None
+        g.db_session.commit()
+        
+        # Получаем текст документа
+        if not document.structure_markdown:
+            document.llm_processing = False
+            document.llm_error = "Нет текста документа для анализа"
+            g.db_session.commit()
+            return jsonify({
+                'success': False, 
+                'error': 'Нет текста документа для анализа. Попробуйте пере-парсить документ.'
+            }), 400
+        
+        # Запускаем анализ
+        analyzer = LLMAnalyzer()
+        result = analyzer.analyze_document(
+            document_text=document.structure_markdown,
+            document_title=document.original_filename
+        )
+        
+        # Сохраняем результат
+        document.llm_processing = False
+        document.llm_check_date = datetime.utcnow()
+        
+        if result.success:
+            document.llm_checked = True
+            document.llm_score = result.score
+            document.llm_summary = result.summary
+            document.llm_strengths = result.strengths
+            document.llm_weaknesses = result.weaknesses
+            document.llm_recommendations = result.recommendations
+            document.llm_detailed_report = result.detailed_report
+            document.llm_error = None
+        else:
+            document.llm_checked = False
+            document.llm_error = result.error
+        
+        g.db_session.commit()
+        
+        return jsonify({
+            'success': result.success,
+            'score': result.score,
+            'summary': result.summary,
+            'error': result.error,
+            'redirect': url_for('documents.view', doc_id=doc_id)
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        
+        document.llm_processing = False
+        document.llm_error = str(e)
+        g.db_session.commit()
+        
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@bp.route("/document/<int:doc_id>/llm-cancel", methods=["POST"])
+@require_login
+def llm_cancel(doc_id):
+    """Отмена/сброс LLM анализа"""
+    user = get_current_user(g.db_session)
+    
+    document = g.db_session.query(Document).filter_by(
+        id=doc_id, user_id=user.id
+    ).first()
+    
+    if not document:
+        return jsonify({'success': False, 'error': 'Документ не найден'}), 404
+    
+    # Сбрасываем состояние LLM
+    document.llm_processing = False
+    document.llm_error = None
+    g.db_session.commit()
+    
+    return jsonify({'success': True})
+
+
+@bp.route("/document/<int:doc_id>/llm-status", methods=["GET"])
+@require_login
+def llm_status(doc_id):
+    """Получение статуса LLM анализа"""
+    user = get_current_user(g.db_session)
+    
+    document = g.db_session.query(Document).filter_by(
+        id=doc_id, user_id=user.id
+    ).first()
+    
+    if not document:
+        return jsonify({'success': False, 'error': 'Документ не найден'}), 404
+    
+    return jsonify({
+        'success': True,
+        'processing': document.llm_processing,
+        'checked': document.llm_checked,
+        'score': document.llm_score,
+        'summary': document.llm_summary,
+        'error': document.llm_error
+    })
 
 
 @bp.route("/document/<int:doc_id>/reparse", methods=["POST"])

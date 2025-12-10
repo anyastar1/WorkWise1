@@ -100,10 +100,22 @@ class Document(Base):
     structure_json = Column(Text, nullable=True)
     structure_markdown = Column(Text, nullable=True)
 
-    # Информация о проверке
+    # Информация о проверке правил
     is_checked = Column(Boolean, default=False)
     check_date = Column(DateTime, nullable=True)
     rating = Column(Float, nullable=True)  # 0-100
+
+    # Информация о проверке LLM
+    llm_checked = Column(Boolean, default=False)
+    llm_check_date = Column(DateTime, nullable=True)
+    llm_score = Column(Float, nullable=True)  # Оценка LLM 0-100
+    llm_summary = Column(Text, nullable=True)  # Краткое резюме
+    llm_strengths = Column(JSON, nullable=True)  # Сильные стороны (список)
+    llm_weaknesses = Column(JSON, nullable=True)  # Слабые стороны (список)
+    llm_recommendations = Column(JSON, nullable=True)  # Рекомендации (список)
+    llm_detailed_report = Column(Text, nullable=True)  # Подробный отчет
+    llm_error = Column(Text, nullable=True)  # Ошибка LLM (если была)
+    llm_processing = Column(Boolean, default=False)  # Флаг обработки
 
     # Метаданные
     total_pages = Column(Integer, default=0)
