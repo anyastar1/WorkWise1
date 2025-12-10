@@ -403,8 +403,8 @@
             <!-- Вкладки -->
             <div class="tabs-container">
                 <div class="tabs-nav">
-                    <button class="tab-btn active" onclick="switchTab('formatting')">📋 Проверка оформления</button>
-                    <button class="tab-btn" onclick="switchTab('llm')">🤖 Анализ содержания</button>
+                    <button class="tab-btn active" data-tab="formatting" onclick="switchTab('formatting')">📋 Проверка оформления</button>
+                    <button class="tab-btn" data-tab="llm" onclick="switchTab('llm')">🤖 Анализ содержания</button>
                 </div>
 
                 <!-- Вкладка: Проверка оформления -->
@@ -622,7 +622,7 @@
     </div>
 
     <script>
-        // Переключение вкладок
+        // Переключение вкладок с сохранением в URL и localStorage
         function switchTab(tabName) {
             // Скрываем все вкладки
             document.querySelectorAll('.tab-content').forEach(tab => {
@@ -634,8 +634,60 @@
             
             // Показываем выбранную
             document.getElementById('tab-' + tabName).classList.add('active');
-            event.target.classList.add('active');
+            
+            // Активируем нужную кнопку
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            tabBtns.forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Сохраняем в URL hash и localStorage
+            window.location.hash = tabName;
+            localStorage.setItem('doc_{{ document.id }}_tab', tabName);
         }
+
+        // Восстановление вкладки при загрузке страницы
+        function restoreTab() {
+            // Приоритет: URL hash > localStorage > default (formatting)
+            let tabName = 'formatting';
+            
+            // Проверяем hash в URL
+            if (window.location.hash) {
+                const hash = window.location.hash.substring(1);
+                if (hash === 'formatting' || hash === 'llm') {
+                    tabName = hash;
+                }
+            } else {
+                // Проверяем localStorage
+                const savedTab = localStorage.getItem('doc_{{ document.id }}_tab');
+                if (savedTab === 'formatting' || savedTab === 'llm') {
+                    tabName = savedTab;
+                }
+            }
+            
+            // Применяем
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById('tab-' + tabName).classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                if (btn.getAttribute('data-tab') === tabName) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        // Вызываем при загрузке
+        document.addEventListener('DOMContentLoaded', restoreTab);
+        
+        // Слушаем изменение hash (кнопка назад/вперёд в браузере)
+        window.addEventListener('hashchange', restoreTab);
 
         // Проверка оформления
         function checkDocument() {
@@ -685,6 +737,9 @@
             const overlay = document.getElementById('checkingOverlay');
             document.getElementById('overlayText').textContent = 'Анализ содержания AI...';
             overlay.style.display = 'flex';
+            
+            // Сохраняем вкладку LLM перед перезагрузкой
+            localStorage.setItem('doc_{{ document.id }}_tab', 'llm');
 
             fetch('{{ url_for("documents.llm_analyze_document", doc_id=document.id) }}', {
                 method: 'POST',
@@ -696,6 +751,7 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    window.location.hash = 'llm';
                     window.location.reload();
                 } else {
                     alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
@@ -709,9 +765,13 @@
         }
 
         function cancelLLM() {
+            // Сохраняем вкладку LLM
+            localStorage.setItem('doc_{{ document.id }}_tab', 'llm');
+            
             fetch('{{ url_for("documents.llm_cancel", doc_id=document.id) }}', {
                 method: 'POST'
             }).then(() => {
+                window.location.hash = 'llm';
                 window.location.reload();
             });
         }
