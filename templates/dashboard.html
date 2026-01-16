@@ -81,17 +81,35 @@
             color: var(--color-secondary-text);
             margin-bottom: 15px;
         }
+        .document-ratings {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .rating-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .rating-label {
+            font-size: 12px;
+            color: var(--color-secondary-text);
+            min-width: 90px;
+        }
         .document-rating {
             display: inline-block;
-            padding: 5px 15px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 15px;
             font-weight: 600;
-            font-size: 14px;
+            font-size: 13px;
         }
         .rating-high { background: rgba(76, 175, 80, 0.2); color: #4caf50; }
         .rating-medium { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
         .rating-low { background: rgba(244, 67, 54, 0.2); color: #f44336; }
         .rating-pending { background: rgba(158, 158, 158, 0.2); color: #9e9e9e; }
+        .rating-icon {
+            font-size: 14px;
+        }
         .document-actions {
             margin-top: 15px;
             display: flex;
@@ -189,17 +207,40 @@
                         <div>Загружен: {{ doc.created_at.strftime('%d.%m.%Y %H:%M') }}</div>
                         <div>Страниц: {{ doc.total_pages }}</div>
                     </div>
-                    {% if doc.is_checked %}
-                        {% if doc.rating >= 80 %}
-                        <span class="document-rating rating-high">Рейтинг: {{ doc.rating|round(1) }}</span>
-                        {% elif doc.rating >= 50 %}
-                        <span class="document-rating rating-medium">Рейтинг: {{ doc.rating|round(1) }}</span>
-                        {% else %}
-                        <span class="document-rating rating-low">Рейтинг: {{ doc.rating|round(1) }}</span>
-                        {% endif %}
-                    {% else %}
-                        <span class="document-rating rating-pending">Не проверен</span>
-                    {% endif %}
+                    <div class="document-ratings">
+                        <!-- Рейтинг оформления -->
+                        <div class="rating-row">
+                            <span class="rating-label"><span class="rating-icon">📋</span> Оформление:</span>
+                            {% if doc.is_checked %}
+                                {% if doc.rating >= 80 %}
+                                <span class="document-rating rating-high">{{ doc.rating|round(0)|int }}</span>
+                                {% elif doc.rating >= 50 %}
+                                <span class="document-rating rating-medium">{{ doc.rating|round(0)|int }}</span>
+                                {% else %}
+                                <span class="document-rating rating-low">{{ doc.rating|round(0)|int }}</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="document-rating rating-pending">—</span>
+                            {% endif %}
+                        </div>
+                        <!-- Рейтинг содержания (LLM) -->
+                        <div class="rating-row">
+                            <span class="rating-label"><span class="rating-icon">🤖</span> Содержание:</span>
+                            {% if doc.llm_checked and doc.llm_score is not none %}
+                                {% if doc.llm_score >= 80 %}
+                                <span class="document-rating rating-high">{{ doc.llm_score|round(0)|int }}</span>
+                                {% elif doc.llm_score >= 50 %}
+                                <span class="document-rating rating-medium">{{ doc.llm_score|round(0)|int }}</span>
+                                {% else %}
+                                <span class="document-rating rating-low">{{ doc.llm_score|round(0)|int }}</span>
+                                {% endif %}
+                            {% elif doc.llm_processing %}
+                                <span class="document-rating rating-pending">⏳</span>
+                            {% else %}
+                                <span class="document-rating rating-pending">—</span>
+                            {% endif %}
+                        </div>
+                    </div>
                     <div class="document-actions">
                         <a href="{{ url_for('documents.view', doc_id=doc.id) }}" class="btn-view">Открыть</a>
                     </div>
