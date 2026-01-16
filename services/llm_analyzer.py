@@ -1,5 +1,5 @@
 """
-Сервис анализа документов с помощью LLM (Ollama).
+Сервис анализа документов с помощью LLM (llama-cpp).
 
 Проверяет текстовое содержание документа:
 - Соответствие целям и теме
@@ -33,7 +33,7 @@ class LLMAnalysisResult:
 
 class LLMAnalyzer:
     """
-    Анализатор документов на основе LLM (Ollama).
+    Анализатор документов на основе LLM (llama-cpp).
     """
     
     SYSTEM_PROMPT = """Ты — эксперт по анализу академических и технических документов. 
@@ -59,9 +59,9 @@ class LLMAnalyzer:
 ВАЖНО: Отвечай ТОЛЬКО валидным JSON без дополнительного текста."""
 
     def __init__(self):
-        self.host = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-        self.model = os.getenv("OLLAMA_MODEL", "llama3.2")
-        self.timeout = int(os.getenv("OLLAMA_TIMEOUT", "120"))
+        self.host = os.getenv("LLAMA_CPP_HOST", "http://localhost:8080")
+        self.model = os.getenv("LLAMA_CPP_MODEL", "gpt-oss-120b-GGUF")
+        self.timeout = int(os.getenv("LLAMA_CPP_TIMEOUT", "120"))
     
     def analyze_document(self, document_text: str, document_title: str = "") -> LLMAnalysisResult:
         """
@@ -98,12 +98,12 @@ class LLMAnalyzer:
 Предоставь анализ в формате JSON."""
 
         try:
-            response = self._call_ollama(user_prompt)
+            response = self._call_llama_cpp(user_prompt)
             return self._parse_response(response)
         except requests.exceptions.ConnectionError:
             return LLMAnalysisResult(
                 success=False,
-                error=f"Не удалось подключиться к Ollama по адресу {self.host}"
+                error=f"Не удалось подключиться к llama-cpp по адресу {self.host}"
             )
         except requests.exceptions.Timeout:
             return LLMAnalysisResult(
@@ -116,19 +116,19 @@ class LLMAnalyzer:
                 error=f"Ошибка при анализе: {str(e)}"
             )
     
-    def _call_ollama(self, prompt: str) -> str:
-        """Вызов Ollama API"""
-        url = f"{self.host}/api/generate"
+    def _call_llama_cpp(self, prompt: str) -> str:
+        """Вызов llama-cpp API (OpenAI-совместимый)"""
+        url = f"{self.host}/v1/chat/completions"
         
         payload = {
             "model": self.model,
-            "prompt": prompt,
-            "system": self.SYSTEM_PROMPT,
-            "stream": False,
-            "options": {
-                "temperature": 0.3,  # Низкая температура для более детерминированного ответа
-                "num_predict": 2000
-            }
+            "messages": [
+                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "user", "content": prompt}
+            ],
+            "temperature": 0.3,  # Низкая температура для более детерминированного ответа
+            "max_tokens": 2000,
+            "stream": False
         }
         
         response = requests.post(
@@ -138,10 +138,10 @@ class LLMAnalyzer:
         )
         
         if response.status_code != 200:
-            raise Exception(f"Ollama вернул ошибку: {response.status_code} - {response.text}")
+            raise Exception(f"llama-cpp вернул ошибку: {response.status_code} - {response.text}")
         
         result = response.json()
-        return result.get("response", "")
+        return result["choices"][0]["message"]["content"]
     
     def _parse_response(self, response: str) -> LLMAnalysisResult:
         """Парсинг ответа LLM"""
@@ -189,9 +189,9 @@ class LLMAnalyzer:
             )
     
     def check_connection(self) -> bool:
-        """Проверка подключения к Ollama"""
+        """Проверка подключения к llama-cpp"""
         try:
-            response = requests.get(f"{self.host}/api/tags", timeout=5)
+            response = requests.get(f"{self.host}/v1/models", timeout=5)
             return response.status_code == 200
         except:
             return False
@@ -199,10 +199,10 @@ class LLMAnalyzer:
     def get_available_models(self) -> list:
         """Получение списка доступных моделей"""
         try:
-            response = requests.get(f"{self.host}/api/tags", timeout=5)
+            response = requests.get(f"{self.host}/v1/models", timeout=5)
             if response.status_code == 200:
                 data = response.json()
-                return [m["name"] for m in data.get("models", [])]
+                return [m["id"] for m in data.get("data", [])]
         except:
             pass
         return []
