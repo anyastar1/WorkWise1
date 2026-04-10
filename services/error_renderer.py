@@ -115,7 +115,8 @@ class ErrorRenderer:
         image.save(output_path)
         print(f"[ErrorRenderer] Saved to: {output_path}")
         
-        return output_path
+        # Возвращаем путь с прямыми слэшами для использования в URL/БД
+        return output_path.replace(os.sep, '/')
     
     def _draw_error(self, draw: ImageDraw.Draw, error: DocumentError):
         """Отрисовка одной ошибки"""
