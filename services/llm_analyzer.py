@@ -62,6 +62,11 @@ class LLMAnalyzer:
         self.host = os.getenv("LLAMA_CPP_HOST", "http://localhost:8080")
         self.model = os.getenv("LLAMA_CPP_MODEL", "gpt-oss-120b-GGUF")
         self.timeout = int(os.getenv("LLAMA_CPP_TIMEOUT", "120"))
+        
+        # OpenRouter settings
+        self.openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+        self.openrouter_url = "https://openrouter.ai/api/v1/chat/completions"
+        self.use_openrouter = self.openrouter_api_key is not None
     
     def analyze_document(self, document_text: str, document_title: str = "") -> LLMAnalysisResult:
         """
@@ -117,16 +122,25 @@ class LLMAnalyzer:
             )
     
     def _call_llama_cpp(self, prompt: str) -> str:
-        """Вызов llama-cpp API (OpenAI-совместимый)"""
-        url = f"{self.host}/v1/chat/completions"
-        
+        """Вызов llama-cpp API (OpenAI-совместимый) или OpenRouter"""
+        if self.use_openrouter:
+            url = self.openrouter_url
+            headers = {
+                "Authorization": f"Bearer {self.openrouter_api_key}",
+                "HTTP-Referer": "http://localhost:5001",  # Required by OpenRouter
+                "X-Title": "Aikor App",                  # Required by OpenRouter
+            }
+        else:
+            url = f"{self.host}/v1/chat/completions"
+            headers = {}
+
         payload = {
             "model": self.model,
             "messages": [
                 {"role": "system", "content": self.SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.3,  # Низкая температура для более детерминированного ответа
+            "temperature": 0.3,
             "max_tokens": 2000,
             "stream": False
         }
@@ -134,11 +148,12 @@ class LLMAnalyzer:
         response = requests.post(
             url,
             json=payload,
+            headers=headers,
             timeout=self.timeout
         )
         
         if response.status_code != 200:
-            raise Exception(f"llama-cpp вернул ошибку: {response.status_code} - {response.text}")
+            raise Exception(f"LLM вернул ошибку: {response.status_code} - {response.text}")
         
         result = response.json()
         return result["choices"][0]["message"]["content"]
@@ -189,12 +204,24 @@ class LLMAnalyzer:
             )
     
     def check_connection(self) -> bool:
-        """Проверка подключения к llama-cpp"""
-        try:
-            response = requests.get(f"{self.host}/v1/models", timeout=5)
-            return response.status_code == 200
-        except:
-            return False
+        """Проверка подключения к llama-cpp или OpenRouter"""
+        if self.use_openrouter:
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.openrouter_api_key}",
+                    "HTTP-Referer": "http://localhost:5001",
+                    "X-Title": "Aikor App",
+                }
+                response = requests.get("https://openrouter.ai/api/v1/auth/key", headers=headers, timeout=5)
+                return response.status_code == 200
+            except:
+                return False
+        else:
+            try:
+                response = requests.get(f"{self.host}/v1/models", timeout=5)
+                return response.status_code == 200
+            except:
+                return False
     
     def get_available_models(self) -> list:
         """Получение списка доступных моделей"""
