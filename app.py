@@ -21,6 +21,11 @@ def create_app():
     uploads_folder = os.path.join(base_path, "uploads")
     os.makedirs(uploads_folder, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = uploads_folder
+    
+    # Отладка путей
+    print(f"[APP] App root: {app_root}")
+    print(f"[APP] Base path: {base_path}")
+    print(f"[APP] Uploads folder: {uploads_folder}")
 
     @app.before_request
     def before_request():

@@ -15,9 +15,14 @@ def get_base_path():
     В режиме PyInstaller возвращает директорию рядом с exe-файлом.
     В режиме разработки возвращает текущую рабочую директорию.
     """
+    # Проверяем PyInstaller по наличию _MEIPASS
     if hasattr(sys, '_MEIPASS'):
-        return os.path.dirname(sys.executable)
-    return os.path.abspath(".")
+        # sys.argv[0] содержит путь к оригинальному exe-файлу
+        # Это работает как для --onefile, так и для --onedir
+        exe_path = sys.argv[0] if sys.argv[0] else sys.executable
+        return os.path.dirname(os.path.abspath(exe_path))
+    # Dev режим: текущая рабочая директория (важно для uploads)
+    return os.getcwd()
 
 
 def get_app_root_path():

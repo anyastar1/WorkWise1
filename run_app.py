@@ -28,6 +28,11 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print("🚀 Запуск Айкор Application")
     print("=" * 60)
+    print(f"sys.argv[0]: {sys.argv[0]}")
+    print(f"sys.executable: {sys.executable}")
+    print(f"sys._MEIPASS exists: {hasattr(sys, '_MEIPASS')}")
+    print(f"Base path: {base_path}")
+    print(f"Uploads dir: {uploads_dir}")
     
     initialize_database()
     
