@@ -166,8 +166,11 @@ class DocumentProcessor:
                 image_filename = f"page_{page_num + 1:04d}.png"
                 image_path = os.path.join(output_folder, image_filename)
                 
+                # Важно для Windows: сохраняем путь в БД с прямыми слэшами для URL
+                db_path = image_path.replace(os.sep, '/')
+                
                 pix.save(image_path)
-                pages.append((page_num + 1, image_path))
+                pages.append((page_num + 1, db_path))
                 
         finally:
             doc.close()
