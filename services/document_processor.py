@@ -18,6 +18,7 @@ import fitz  # PyMuPDF
 from PIL import Image
 
 from database import Document, DocumentPage, get_session
+from utils.path_helpers import get_base_path
 
 
 class DocumentProcessor:
@@ -28,7 +29,7 @@ class DocumentProcessor:
     IMAGE_FORMAT = "PNG"
     
     def __init__(self, uploads_dir: str = None):
-        self.uploads_dir = uploads_dir or self.UPLOADS_DIR
+        self.uploads_dir = uploads_dir or os.path.join(get_base_path(), self.UPLOADS_DIR)
         os.makedirs(self.uploads_dir, exist_ok=True)
     
     def process_document(self, file_path: str, user_id: int) -> Document:
