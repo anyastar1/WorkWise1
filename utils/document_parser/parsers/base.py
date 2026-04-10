@@ -8,7 +8,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import BinaryIO, Union
 
-from src.models.document import ParsedDocument
+from utils.document_parser.models.document import ParsedDocument
 
 
 class BaseParser(ABC):

@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple, Union
 import logging
 
-from src.models.document import ParsedDocument
+from utils.document_parser.models.document import ParsedDocument
+from utils.document_parser.parsers import ParserFactory
 
 
 logger = logging.getLogger(__name__)
@@ -31,8 +32,6 @@ def _parse_single_document(
     Returns:
         Tuple of (filepath, parsed_document, error_message)
     """
-    from src.parsers import ParserFactory
-    
     filepath = Path(filepath)
     
     try:
@@ -199,8 +198,6 @@ class DocumentProcessor:
         Returns:
             ParsedDocument
         """
-        from src.parsers import ParserFactory
-        
         filepath = Path(filepath)
         
         # Try cache first

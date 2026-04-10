@@ -8,8 +8,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from src.parsers import ParserFactory
-from src.exporters.llm_exporter import LLMExporter
+from utils.document_parser.parsers import ParserFactory
+from utils.document_parser.exporters.llm_exporter import LLMExporter
 
 
 def main():

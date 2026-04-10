@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 import logging
 
-from src.models.document import (
+from utils.document_parser.models.document import (
     ParsedDocument,
     DocumentMetadata,
     DocumentPage,
