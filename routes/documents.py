@@ -37,6 +37,12 @@ def get_uploads_dir() -> str:
     return os.path.join(get_base_path(), 'uploads')
 
 
+def get_upload_relative_path(file_path: str) -> str:
+    """Возвращает путь относительно uploads в формате URL."""
+    rel_path = os.path.relpath(file_path, get_uploads_dir())
+    return rel_path.replace('\\', '/')
+
+
 @bp.route("/upload", methods=["GET", "POST"])
 @require_login
 def upload():
@@ -441,14 +447,11 @@ def serve_upload(filename):
 # Вспомогательные функции
 def get_page_image_url(page: DocumentPage) -> str:
     """Получить URL изображения страницы"""
-    # Получаем относительный путь от uploads/
-    rel_path = os.path.relpath(page.image_path, get_uploads_dir())
-    return url_for('documents.serve_upload', filename=rel_path)
+    return url_for('documents.serve_upload', filename=get_upload_relative_path(page.image_path))
 
 
 def get_page_errors_image_url(page: DocumentPage) -> str:
     """Получить URL изображения страницы с ошибками"""
     if not page.image_with_errors_path:
         return None
-    rel_path = os.path.relpath(page.image_with_errors_path, get_uploads_dir())
-    return url_for('documents.serve_upload', filename=rel_path)
+    return url_for('documents.serve_upload', filename=get_upload_relative_path(page.image_with_errors_path))
