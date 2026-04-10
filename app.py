@@ -6,17 +6,21 @@
 import os
 from flask import Flask, g
 from database import get_session, initialize_database
+from utils.path_helpers import get_base_path, get_app_root_path
 
 def create_app():
-    app = Flask(__name__, static_folder="static", template_folder="templates")
+    app_root = get_app_root_path()
+    app = Flask(__name__, static_folder=os.path.join(app_root, "static"), template_folder=os.path.join(app_root, "templates"))
     app.secret_key = os.urandom(24)
 
     # Настройки загрузки файлов
     app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024  # 50MB max
     
     # Важно: UPLOAD_FOLDER должен быть в рабочей директории пользователя, а не внутри exe
-    app.config["UPLOAD_FOLDER"] = os.path.join(os.getcwd(), "uploads")
-    os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+    base_path = get_base_path()
+    uploads_folder = os.path.join(base_path, "uploads")
+    os.makedirs(uploads_folder, exist_ok=True)
+    app.config["UPLOAD_FOLDER"] = uploads_folder
 
     @app.before_request
     def before_request():

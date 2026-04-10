@@ -4,6 +4,7 @@
 
 import os
 import json
+from utils.path_helpers import get_app_root_path
 from flask import (
     Blueprint, render_template, request, redirect, 
     url_for, flash, g, jsonify, send_from_directory,
@@ -52,7 +53,8 @@ def upload():
         
         # Сохраняем временный файл
         filename = secure_filename(file.filename)
-        temp_dir = os.path.join(current_app.root_path, 'uploads', 'temp')
+        app_root = get_app_root_path()
+        temp_dir = os.path.join(app_root, 'uploads', 'temp')
         os.makedirs(temp_dir, exist_ok=True)
         temp_path = os.path.join(temp_dir, filename)
         file.save(temp_path)
@@ -60,7 +62,7 @@ def upload():
         try:
             # Обрабатываем документ
             processor = DocumentProcessor(
-                uploads_dir=os.path.join(current_app.root_path, 'uploads')
+                uploads_dir=os.path.join(app_root, 'uploads')
             )
             document = processor.process_document(temp_path, user.id)
             
@@ -343,8 +345,9 @@ def reparse_document(doc_id):
     
     try:
         doc_folder = os.path.dirname(document.images_folder)
+        app_root = get_app_root_path()
         processor = DocumentProcessor(
-            uploads_dir=os.path.join(current_app.root_path, 'uploads')
+            uploads_dir=os.path.join(app_root, 'uploads')
         )
         
         # Ищем оригинальный файл
@@ -426,7 +429,8 @@ def delete_document(doc_id):
 @bp.route("/uploads/<path:filename>")
 def serve_upload(filename):
     """Отдача загруженных файлов"""
-    uploads_dir = os.path.join(current_app.root_path, 'uploads')
+    app_root = get_app_root_path()
+    uploads_dir = os.path.join(app_root, 'uploads')
     return send_from_directory(uploads_dir, filename)
 
 
@@ -434,7 +438,8 @@ def serve_upload(filename):
 def get_page_image_url(page: DocumentPage) -> str:
     """Получить URL изображения страницы"""
     # Получаем относительный путь от uploads/
-    uploads_dir = os.path.join(current_app.root_path, 'uploads')
+    app_root = get_app_root_path()
+    uploads_dir = os.path.join(app_root, 'uploads')
     rel_path = os.path.relpath(page.image_path, uploads_dir)
     return url_for('documents.serve_upload', filename=rel_path)
 
@@ -443,6 +448,7 @@ def get_page_errors_image_url(page: DocumentPage) -> str:
     """Получить URL изображения страницы с ошибками"""
     if not page.image_with_errors_path:
         return None
-    uploads_dir = os.path.join(current_app.root_path, 'uploads')
+    app_root = get_app_root_path()
+    uploads_dir = os.path.join(app_root, 'uploads')
     rel_path = os.path.relpath(page.image_with_errors_path, uploads_dir)
     return url_for('documents.serve_upload', filename=rel_path)

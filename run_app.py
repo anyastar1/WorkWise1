@@ -3,24 +3,25 @@ import sys
 import webbrowser
 from threading import Timer
 from app import app, initialize_database
+from utils.path_helpers import get_base_path, get_app_root_path
 
 def open_browser():
     """Открывает браузер по умолчанию через 2 секунды после запуска сервера."""
     webbrowser.open("http://127.0.0.1:5001")
 
 def get_resource_path(relative_path):
-    """ Получает абсолютный путь к ресурсам, работает для dev и для PyInstaller """
-    if hasattr(sys, '_MEIPASS'):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
+    """Получает абсолютный путь к ресурсам, работает для dev и для PyInstaller"""
+    app_root = get_app_root_path()
+    return os.path.join(app_root, relative_path)
 
 if __name__ == "__main__":
     # Настройка путей для Flask, чтобы он видел static и templates внутри PyInstaller
     app.static_folder = get_resource_path("static")
     app.template_folder = get_resource_path("templates")
     
-    # Убеждаемся, что uploads существует в текущей рабочей директории (не внутри exe)
-    uploads_dir = os.path.join(os.getcwd(), "uploads")
+    # Убеждаемся, что uploads существует в базовой директории (рядом с exe)
+    base_path = get_base_path()
+    uploads_dir = os.path.join(base_path, "uploads")
     os.makedirs(uploads_dir, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = uploads_dir
 
